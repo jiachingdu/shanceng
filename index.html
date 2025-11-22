@@ -20,9 +20,12 @@
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 20s linear infinite; }
         .animate-marquee:hover { animation-play-state: paused; }
+
+        /* ★★★ 新增：鎖定背景捲動類別 ★★★ */
+        .body-lock { overflow: hidden; height: 100vh; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 pb-32"> <!-- 增加底部 Padding 避免內容被擋住 -->
+<body class="bg-gray-50 text-gray-800 pb-32">
 
     <!-- ★★★ 請確認這裡是 GAS 最新網址 ★★★ -->
     <script>
@@ -54,15 +57,12 @@
     <main class="max-w-md mx-auto px-4 pt-4 min-h-screen">
         
         <div id="page-menu" class="animate-fade-in">
-            
             <!-- 跑馬燈區塊 -->
             <div id="marquee-section" class="bg-orange-50 border border-orange-100 rounded-xl overflow-hidden relative h-10 flex items-center mb-4 hidden shadow-sm">
                 <div class="w-full flex items-center px-3">
                     <i class="fas fa-bullhorn text-orange-500 text-sm mr-2 z-10"></i>
                     <div class="flex-1 overflow-hidden relative h-full flex items-center">
-                        <div id="marquee-text" class="animate-marquee text-sm text-orange-800 font-medium w-full pl-2">
-                            讀取中...
-                        </div>
+                        <div id="marquee-text" class="animate-marquee text-sm text-orange-800 font-medium w-full pl-2">讀取中...</div>
                     </div>
                 </div>
             </div>
@@ -105,18 +105,44 @@
     <!-- 購物車 Modal -->
     <div id="cart-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity opacity-0" id="cart-backdrop" onclick="toggleCart()"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[85vh] flex flex-col" id="cart-panel">
-            <div class="w-full flex justify-center pt-3 pb-1" onclick="toggleCart()"><div class="w-12 h-1.5 bg-gray-300 rounded-full"></div></div>
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h2 class="text-xl font-bold text-gray-800">您的餐點</h2><button onclick="clearCart()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-md hover:bg-red-100 transition-colors">清空</button></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[90vh] flex flex-col" id="cart-panel">
+            
+            <!-- 把手 -->
+            <div class="w-full flex justify-center pt-3 pb-1" onclick="toggleCart()">
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <!-- 標題列 (修改處：新增返回箭頭) -->
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center relative">
+                <!-- ★★★ 新增：低調的返回上一頁箭頭 ★★★ -->
+                <button onclick="toggleCart()" class="text-gray-300 hover:text-gray-500 p-2 -ml-2 transition-colors">
+                    <i class="fas fa-chevron-left text-lg"></i>
+                </button>
+                
+                <h2 class="text-xl font-bold text-gray-800 absolute left-1/2 transform -translate-x-1/2">您的餐點</h2>
+                
+                <button onclick="clearCart()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-md hover:bg-red-100 transition-colors">清空</button>
+            </div>
+
+            <!-- 列表區 -->
             <div class="flex-1 overflow-y-auto p-6 space-y-4 min-h-[200px]" id="cart-items"></div>
+
+            <!-- 結帳區 -->
             <div class="p-6 bg-gray-50 border-t border-gray-100 pb-safe">
-                <div class="flex justify-between items-center mb-6"><span class="text-gray-500 font-medium">總計金額</span><span class="text-3xl font-bold text-gray-900" id="cart-total-modal">$0</span></div>
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-gray-500 font-medium">總計金額</span>
+                    <span class="text-3xl font-bold text-gray-900" id="cart-total-modal">$0</span>
+                </div>
+                
                 <div class="space-y-3 mb-4">
                     <input type="text" id="customer-name" placeholder="怎麼稱呼您？" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                     <input type="tel" id="customer-phone" placeholder="聯絡電話" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                     <input type="text" id="order-note" placeholder="備註 (例如：微辣、切塊)" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                 </div>
-                <button onclick="submitOrder()" id="submit-btn" class="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg btn-press transition-all flex justify-center items-center">確認送出</button>
+
+                <button onclick="submitOrder()" id="submit-btn" class="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg btn-press transition-all flex justify-center items-center">
+                    確認送出
+                </button>
             </div>
         </div>
     </div>
@@ -190,7 +216,6 @@
                     renderMenu(menuData);
                     setupAnnouncement(json.data.settings);
                     setupMarquee(json.data.settings);
-                    
                     document.getElementById('loading-skeleton').classList.add('hidden');
                     document.getElementById('menu-container').classList.remove('hidden');
                     document.getElementById('category-nav').classList.remove('hidden');
@@ -202,13 +227,10 @@
             const marqueeSetting = settings.find(s => s.key === 'marquee');
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
-
             if (marqueeSetting && marqueeSetting.active) {
                 marqueeText.textContent = marqueeSetting.value;
                 marqueeSection.classList.remove('hidden');
-            } else {
-                marqueeSection.classList.add('hidden'); 
-            }
+            } else { marqueeSection.classList.add('hidden'); }
         }
 
         function renderCategoryNav(menu) {
@@ -317,19 +339,25 @@
             document.getElementById('float-total').textContent = '$' + totalAmount;
             document.getElementById('cart-total-modal').textContent = '$' + totalAmount;
         }
+
         function toggleCart() {
             if (cart.length === 0 && document.getElementById('cart-modal').classList.contains('hidden')) return;
             const modal = document.getElementById('cart-modal');
             const backdrop = document.getElementById('cart-backdrop');
             const panel = document.getElementById('cart-panel');
+            
+            // ★★★ 關鍵修改：鎖定背景捲動 ★★★
             if (modal.classList.contains('hidden')) {
+                document.body.classList.add('body-lock'); // 鎖住
                 modal.classList.remove('hidden');
                 requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); });
             } else {
+                document.body.classList.remove('body-lock'); // 解鎖
                 backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full');
                 setTimeout(() => { modal.classList.add('hidden'); }, 300);
             }
         }
+
         function submitOrder() {
             if (cart.length === 0) return showToast('購物車是空的', 'error');
             const name = document.getElementById('customer-name').value.trim();
