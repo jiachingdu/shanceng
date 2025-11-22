@@ -169,9 +169,9 @@
                             borderClass = 'border-l-4 border-gray-300';
                         }
 
-                        // 只有在訂單成立或備餐中才可以取消
+                        // ★★★ 關鍵修改：傳遞按鈕本身 (this) 給 cancelOrder ★★★
                         if (status === 'pending' || status === 'confirmed') {
-                            cancelBtn = `<button onclick="cancelOrder('${order.orderId}')" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`;
+                            cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`;
                         }
 
                         const date = new Date(order.time);
@@ -200,8 +200,18 @@
             }).catch(e => { container.innerHTML = `<div class="text-center text-red-400 py-4">查詢失敗，請稍後再試</div>`; });
         }
 
-        function cancelOrder(orderId) {
+        // ★★★ 關鍵修改：接收按鈕物件並立即回饋 ★★★
+        function cancelOrder(orderId, btn) {
             if(!confirm('確定要取消這筆訂單嗎？')) return;
+            
+            // 立即 UI 回饋
+            if(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>取消中...';
+                btn.classList.add('text-gray-400', 'cursor-not-allowed');
+                btn.classList.remove('text-red-400', 'hover:text-red-600', 'underline');
+            }
+
             fetch(API_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'cancel_order', orderId: orderId, role: 'customer' })
@@ -211,6 +221,13 @@
                     searchOrder(); // 重新整理列表
                 } else {
                     showToast(json.message, 'error');
+                    // 如果失敗，復原按鈕
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '取消訂單';
+                        btn.classList.remove('text-gray-400', 'cursor-not-allowed');
+                        btn.classList.add('text-red-400', 'hover:text-red-600', 'underline');
+                    }
                 }
             });
         }
