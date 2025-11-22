@@ -23,12 +23,12 @@
     <!-- ★★★ 設定區 ★★★ -->
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyeUwNCmlOw-fDt-g8fKWj9N9ue9XDZPGOY0tyntNvAXm6rp33oyqmTssA4JbJxcxg5/exec";
-        const ADMIN_PASSWORD = "8888"; 
-        
+        const ADMIN_PASSWORD = "58888"; 
         const GITHUB_USERNAME = "jiachingdu";    
         const REPO_NAME = "shanceng";            
     </script>
 
+    <!-- 登入遮罩 -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-900/90 backdrop-blur-sm z-50 flex items-center justify-center px-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
             <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl"><i class="fas fa-user-shield"></i></div>
@@ -38,6 +38,7 @@
         </div>
     </div>
 
+    <!-- 主介面 -->
     <div id="main-app" class="hidden min-h-screen">
         <header class="bg-white sticky top-0 z-40 shadow-sm h-16 flex items-center justify-between px-4">
             <h1 class="text-xl font-bold text-gray-800 flex items-center"><i class="fas fa-store text-orange-500 mr-2"></i>山層管理</h1>
@@ -73,21 +74,16 @@
                     <h2 class="text-2xl font-bold text-gray-800">菜單設定</h2>
                     <button onclick="openEditModal('add')" class="w-10 h-10 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center btn-press"><i class="fas fa-plus"></i></button>
                 </div>
-                <div id="menu-list" class="space-y-3"></div>
+                <div id="menu-list" class="space-y-3"><div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div></div>
             </div>
 
-            <!-- ★★★ 新增：跑馬燈管理區 ★★★ -->
+            <!-- 跑馬燈管理區 -->
             <div id="page-marquee" class="space-y-4 hidden">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-2xl font-bold text-gray-800">跑馬燈設定</h2>
                     <button onclick="openMarqueeModal('add')" class="w-10 h-10 bg-orange-500 text-white rounded-full shadow-lg flex items-center justify-center btn-press"><i class="fas fa-plus"></i></button>
                 </div>
-                <div class="bg-blue-50 p-3 rounded-xl text-sm text-blue-600 mb-4 border border-blue-100">
-                    <i class="fas fa-info-circle mr-1"></i> 跑馬燈會同時顯示，數字越大排越前面
-                </div>
-                <div id="marquee-list" class="space-y-3">
-                    <div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div>
-                </div>
+                <div id="marquee-list" class="space-y-3"><div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div></div>
             </div>
         </main>
 
@@ -98,7 +94,7 @@
         </nav>
     </div>
 
-    <!-- 菜單編輯 Modal -->
+    <!-- 菜單 Modal -->
     <div id="edit-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity opacity-0" id="edit-backdrop" onclick="closeModal('edit')"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[90vh] flex flex-col" id="edit-panel">
@@ -116,7 +112,7 @@
         </div>
     </div>
 
-    <!-- ★★★ 新增：跑馬燈編輯 Modal ★★★ -->
+    <!-- 跑馬燈 Modal -->
     <div id="marquee-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity opacity-0" id="marquee-backdrop" onclick="closeModal('marquee')"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[90vh] flex flex-col" id="marquee-panel">
@@ -148,30 +144,91 @@
                 document.getElementById(id).classList.remove('text-orange-500');
                 document.getElementById(id).classList.add('text-gray-400');
             });
-
             document.getElementById(`page-${tab}`).classList.remove('hidden');
             document.getElementById(`tab-${tab}`).classList.add('text-orange-500');
             document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
-
-            if(tab === 'orders') fetchOrders();
-            else if(tab === 'menu') fetchMenu();
-            else if(tab === 'marquee') fetchMarquees();
+            if(tab === 'orders') fetchOrders(); else if(tab === 'menu') fetchMenu(); else if(tab === 'marquee') fetchMarquees();
         }
 
-        // --- 圖片上傳 ---
         function resetGithubToken() { localStorage.removeItem('github_token'); alert('GitHub 金鑰已重置，下次上傳時請重新輸入。'); }
-        async function handleImageUpload(input) { /* (與之前相同，略) */ } // 請將 V4.1 的上傳邏輯保留
+        async function handleImageUpload(input) {
+            const file = input.files[0]; if (!file) return;
+            const maxSize = 2 * 1024 * 1024; if (file.size > maxSize) { showToast('圖片過大！請使用 2MB 以下的照片', 'error'); input.value = ''; return; }
+            let token = localStorage.getItem('github_token');
+            if (!token) { token = prompt("請輸入您的 GitHub Personal Access Token (ghp_開頭):"); if (!token) { alert("需輸入 Token 才能上傳圖片！"); input.value = ''; return; } localStorage.setItem('github_token', token); }
+            const btn = document.getElementById('upload-btn'); const originalBtnContent = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+            try { const reader = new FileReader(); reader.onload = async function(e) { const content = e.target.result.split(',')[1]; const filename = 'img_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''); const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images/${filename}`; const res = await fetch(apiUrl, { method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `Upload ${filename}`, content: content }) }); if (res.ok) { const imageUrl = `https://${GITHUB_USERNAME}.github.io/${REPO_NAME}/images/${filename}`; document.getElementById('edit-image').value = imageUrl; previewImage(imageUrl); showToast('上傳成功！'); } else { const err = await res.json(); if (res.status === 401) { localStorage.removeItem('github_token'); alert("Token 無效或過期"); } else throw new Error(err.message); } btn.innerHTML = originalBtnContent; btn.disabled = false; input.value = ''; }; reader.readAsDataURL(file); } catch (error) { console.error(error); showToast('上傳失敗: ' + error.message, 'error'); btn.innerHTML = originalBtnContent; btn.disabled = false; }
+        }
+        function previewImage(url) { const img = document.getElementById('preview-img'), icon = document.getElementById('preview-icon'); if(url) { img.src = url; img.classList.remove('hidden'); icon.classList.add('hidden'); } else { img.classList.add('hidden'); icon.classList.remove('hidden'); } }
 
-        // --- 訂單管理 ---
-        async function fetchOrders() { /* (與之前相同，略) */ } // 請將 V4.1 的訂單邏輯保留
+        async function fetchOrders() {
+            const container = document.getElementById('orders-list');
+            const dateVal = document.getElementById('date-filter').value;
+            const showHistory = document.getElementById('show-history').checked;
+            container.innerHTML = '<div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div>';
+            try { 
+                const res = await fetch(`${API_URL}?type=admin_orders&date=${dateVal}&history=${showHistory}`);
+                const json = await res.json(); 
+                container.innerHTML = ''; 
+                if(json.status === 'success') { 
+                    if(json.data.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-gray-300"><i class="fas fa-clipboard-check text-5xl mb-4 opacity-30"></i><p>該日期沒有訂單</p></div>`; return; }
+                    json.data.forEach(order => {
+                        const status = order.status, isFinished = status === 'finished' || status === 'cancelled', dateStr = order.timestamp || order.time, date = new Date(dateStr), hh = String(date.getHours()).padStart(2,'0'), mm = String(date.getMinutes()).padStart(2,'0'), timeStr = (isNaN(date.getTime())) ? '--:--' : `${hh}:${mm}`;
+                        let statusBadge = '', btnHtml = '', cardStyle = '';
+                        if (status === 'pending') { statusBadge = `<span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-lg">訂單成立</span>`; btnHtml = `<button onclick="updateStatus('${order.orderId}', 'confirmed')" class="bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md btn-press w-full mb-2">確認訂單</button>`; }
+                        else if (status === 'confirmed') { statusBadge = `<span class="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center animate-pulse"><i class="fas fa-fire mr-1"></i>備餐中</span>`; btnHtml = `<button onclick="updateStatus('${order.orderId}', 'done')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md btn-press w-full mb-2">餐點完成</button>`; }
+                        else if (status === 'done') { statusBadge = `<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-lg">待取餐</span>`; btnHtml = `<button onclick="updateStatus('${order.orderId}', 'finished')" class="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md btn-press w-full mb-2">取餐完成</button>`; }
+                        else if (status === 'finished') { statusBadge = `<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-lg">已結單</span>`; cardStyle = 'opacity-50 grayscale'; }
+                        else if (status === 'cancelled') { statusBadge = `<span class="bg-red-100 text-red-600 text-xs font-bold px-2.5 py-1 rounded-lg">已取消</span>`; cardStyle = 'opacity-50 grayscale'; }
+                        let cancelBtn = !isFinished ? `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-3 block text-center w-full hover:text-red-600">取消訂單</button>` : '';
+                        container.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 ${cardStyle} transition-all"><div class="flex justify-between items-start mb-3"><div class="flex flex-col"><div class="flex items-center space-x-2"><span class="text-lg font-bold text-gray-800">${order.customerName}</span><span class="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${timeStr}</span></div><span class="text-xs text-gray-400 font-mono mt-0.5">${order.orderId.slice(-4)}</span></div>${statusBadge}</div><div class="py-3 border-t border-dashed border-gray-200 space-y-1"><p class="text-gray-700 font-medium text-sm leading-relaxed whitespace-pre-line">${order.items.replace(/, /g, '\n')}</p></div>${order.note ? `<div class="text-xs text-orange-600 bg-orange-50 p-2 rounded-lg mb-3 font-medium"><i class="fas fa-comment-alt mr-1"></i>${order.note}</div>` : ''}<div class="flex justify-between items-center pt-2 mt-2 border-t border-gray-100 mb-4"><div class="flex flex-col"><span class="text-xs text-gray-400">總金額</span><span class="text-xl font-bold text-gray-900">$${order.totalAmount}</span></div><a href="tel:${order.customerPhone}" class="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-100 transition-colors mr-2 ml-auto"><i class="fas fa-phone"></i></a></div>${btnHtml}${cancelBtn}</div>`;
+                    });
+                }
+            } catch(e) { console.error(e); showToast('讀取失敗', 'error'); }
+        }
+        function updateStatus(orderId, status) { const btn = event.target; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; btn.disabled = true; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_order_status', orderId: orderId, status: status }) }).then(res => res.json()).then(json => { if(json.status === 'success') { showToast('狀態已更新'); fetchOrders(); } }); }
+        function cancelOrder(orderId, btn) { if(!confirm('確定要取消這筆訂單嗎？')) return; if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 取消中...'; btn.classList.add('text-gray-400', 'cursor-not-allowed'); btn.classList.remove('text-red-400', 'hover:text-red-600', 'underline'); } fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'cancel_order', orderId: orderId, role: 'admin' }) }).then(res => res.json()).then(json => { if(json.status === 'success') { showToast('訂單已取消'); fetchOrders(); } else { showToast(json.message, 'error'); if(btn) { btn.disabled = false; btn.innerHTML = '取消訂單'; btn.classList.remove('text-gray-400', 'cursor-not-allowed'); btn.classList.add('text-red-400', 'hover:text-red-600', 'underline'); } } }); }
 
         // --- 菜單管理 ---
-        async function fetchMenu() { /* (與之前相同，略) */ } // 請將 V4.1 的菜單邏輯保留
-        function openEditModal(mode, item = null) { /* (與之前相同，略) */ } // 請將 V4.1 的 Modal 邏輯保留
-        function saveMenu() { /* (與之前相同，略) */ } // 請將 V4.1 的 saveMenu 保留
-        function deleteItem() { /* (與之前相同，略) */ } // 請將 V4.1 的 deleteItem 保留
+        async function fetchMenu() {
+            const container = document.getElementById('menu-list');
+            container.innerHTML = '<div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div>';
+            try {
+                const res = await fetch(API_URL); // Default doGet returns menu
+                const json = await res.json();
+                container.innerHTML = '';
+                if(json.status === 'success' && json.data.menu) {
+                    json.data.menu.forEach(item => {
+                        const isAvail = (item.available === true || item.available === "TRUE");
+                        const opacity = isAvail ? '' : 'opacity-60 grayscale';
+                        const statusDot = isAvail ? 'bg-green-500' : 'bg-gray-300';
+                        container.innerHTML += `<div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center ${opacity} transition-all btn-press" onclick='openEditModal("edit", ${JSON.stringify(item)})'><div class="flex items-center space-x-4 overflow-hidden"><div class="w-2 h-2 rounded-full ${statusDot} flex-shrink-0"></div><div class="flex flex-col overflow-hidden"><span class="text-xs text-gray-400 mb-0.5">${item.category}</span><span class="font-bold text-gray-800 text-lg truncate">${item.name}</span><span class="text-orange-500 font-bold">$${item.price}</span></div></div><div class="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-400"><i class="fas fa-chevron-right text-xs"></i></div></div>`;
+                    });
+                }
+            } catch(e) { console.error(e); showToast('讀取失敗', 'error'); }
+        }
+        function openEditModal(mode, item = null) {
+            const modal = document.getElementById('edit-modal'), backdrop = document.getElementById('edit-backdrop'), panel = document.getElementById('edit-panel'), title = document.getElementById('modal-title'), btnDel = document.getElementById('btn-delete');
+            const imgInput = document.getElementById('edit-image'), previewImg = document.getElementById('preview-img'), previewIcon = document.getElementById('preview-icon');
+            imgInput.oninput = function() { if(this.value) { previewImg.src = this.value; previewImg.classList.remove('hidden'); previewIcon.classList.add('hidden'); } else { previewImg.classList.add('hidden'); previewIcon.classList.remove('hidden'); } };
+            document.body.classList.add('body-lock'); modal.classList.remove('hidden');
+            requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); });
+            if(mode === 'add') { title.innerText = '新增餐點'; btnDel.classList.add('hidden'); document.getElementById('edit-id').value = ''; document.getElementById('edit-category').value = ''; document.getElementById('edit-name').value = ''; document.getElementById('edit-price').value = ''; document.getElementById('edit-desc').value = ''; imgInput.value = ''; document.getElementById('edit-active').checked = true; previewImg.classList.add('hidden'); previewIcon.classList.remove('hidden'); } else { title.innerText = '編輯餐點'; btnDel.classList.remove('hidden'); document.getElementById('edit-id').value = item.id; document.getElementById('edit-category').value = item.category; document.getElementById('edit-name').value = item.name; document.getElementById('edit-price').value = item.price; document.getElementById('edit-desc').value = item.description; imgInput.value = item.image || ''; document.getElementById('edit-active').checked = (item.available === true || item.available === "TRUE"); imgInput.oninput(); }
+        }
+        function closeModal(type) {
+            const modal = document.getElementById(type + '-modal'), backdrop = document.getElementById(type + '-backdrop'), panel = document.getElementById(type + '-panel');
+            document.body.classList.remove('body-lock'); backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        function saveMenu() {
+            const id = document.getElementById('edit-id').value;
+            const method = id ? 'edit' : 'add';
+            const itemData = { id: id, category: document.getElementById('edit-category').value, name: document.getElementById('edit-name').value, price: document.getElementById('edit-price').value, description: document.getElementById('edit-desc').value, image: document.getElementById('edit-image').value, available: document.getElementById('edit-active').checked ? 'TRUE' : 'FALSE' };
+            const btn = document.getElementById('btn-save'); const originalText = btn.innerText; btn.innerText = '處理中...'; btn.disabled = true;
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_menu', method: method, item: itemData }) }).then(res => res.json()).then(json => { btn.innerText = originalText; btn.disabled = false; if(json.status === 'success') { showToast(method === 'add' ? '新增成功' : '更新成功'); closeModal('edit'); fetchMenu(); } else showToast('失敗: ' + json.message, 'error'); });
+        }
+        function deleteItem() { if(!confirm('確定要刪除這個餐點嗎？')) return; const id = document.getElementById('edit-id').value; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_menu', method: 'delete', item: { id: id } }) }).then(res => res.json()).then(json => { if(json.status === 'success') { showToast('已刪除餐點', 'error'); closeModal('edit'); fetchMenu(); } }); }
 
-        // ★★★ 新增：跑馬燈管理 ★★★
+        // --- 跑馬燈管理 ---
         async function fetchMarquees() {
             const container = document.getElementById('marquee-list');
             container.innerHTML = '<div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div>';
@@ -179,7 +236,7 @@
                 const res = await fetch(API_URL + '?type=admin_marquees');
                 const json = await res.json();
                 container.innerHTML = '';
-                if(json.status === 'success') {
+                if(json.status === 'success' && json.data) {
                     json.data.forEach(mq => {
                         const isActive = (mq.active === true || mq.active === "TRUE");
                         const opacity = isActive ? '' : 'opacity-60 grayscale';
@@ -199,47 +256,20 @@
                 }
             } catch(e) { showToast('讀取失敗', 'error'); }
         }
-
         function openMarqueeModal(mode, item = null) {
             const modal = document.getElementById('marquee-modal'), backdrop = document.getElementById('marquee-backdrop'), panel = document.getElementById('marquee-panel'), title = document.getElementById('marquee-title'), btnDel = document.getElementById('mq-btn-delete');
             document.body.classList.add('body-lock'); modal.classList.remove('hidden');
             requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); });
-            if(mode === 'add') { 
-                title.innerText = '新增跑馬燈'; btnDel.classList.add('hidden');
-                document.getElementById('mq-id').value = ''; document.getElementById('mq-content').value = ''; 
-                document.getElementById('mq-weight').value = '0'; document.getElementById('mq-active').checked = true; 
-            } else { 
-                title.innerText = '編輯跑馬燈'; btnDel.classList.remove('hidden');
-                document.getElementById('mq-id').value = item.id; document.getElementById('mq-content').value = item.content; 
-                document.getElementById('mq-weight').value = item.weight || 0; document.getElementById('mq-active').checked = (item.active === true || item.active === "TRUE"); 
-            }
+            if(mode === 'add') { title.innerText = '新增跑馬燈'; btnDel.classList.add('hidden'); document.getElementById('mq-id').value = ''; document.getElementById('mq-content').value = ''; document.getElementById('mq-weight').value = '0'; document.getElementById('mq-active').checked = true; } else { title.innerText = '編輯跑馬燈'; btnDel.classList.remove('hidden'); document.getElementById('mq-id').value = item.id; document.getElementById('mq-content').value = item.content; document.getElementById('mq-weight').value = item.weight || 0; document.getElementById('mq-active').checked = (item.active === true || item.active === "TRUE"); }
         }
-
-        function closeModal(type) {
-            const modal = document.getElementById(type + '-modal'), backdrop = document.getElementById(type + '-backdrop'), panel = document.getElementById(type + '-panel');
-            document.body.classList.remove('body-lock'); backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
         function saveMarquee() {
             const id = document.getElementById('mq-id').value;
             const method = id ? 'edit' : 'add';
-            const itemData = { 
-                id: id, content: document.getElementById('mq-content').value, 
-                weight: document.getElementById('mq-weight').value, 
-                active: document.getElementById('mq-active').checked ? 'TRUE' : 'FALSE' 
-            };
+            const itemData = { id: id, content: document.getElementById('mq-content').value, weight: document.getElementById('mq-weight').value, active: document.getElementById('mq-active').checked ? 'TRUE' : 'FALSE' };
             const btn = document.getElementById('mq-btn-save'); const originalText = btn.innerText; btn.innerText = '處理中...'; btn.disabled = true;
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_marquee', method: method, item: itemData }) }).then(res => res.json()).then(json => { btn.innerText = originalText; btn.disabled = false; if(json.status === 'success') { showToast(method === 'add' ? '新增成功' : '更新成功'); closeModal('marquee'); fetchMarquees(); } else showToast('失敗: ' + json.message, 'error'); });
         }
-
         function deleteMarquee() { if(!confirm('確定要刪除此跑馬燈？')) return; const id = document.getElementById('mq-id').value; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'update_marquee', method: 'delete', item: { id: id } }) }).then(res => res.json()).then(json => { if(json.status === 'success') { showToast('已刪除', 'error'); closeModal('marquee'); fetchMarquees(); } }); }
-        
-        // 補回 updateStatus 和 cancelOrder 的按鈕邏輯
-        function updateStatus(orderId, status) { /* (與 V4.1 相同，略) */ }
-        function cancelOrder(orderId, btn) { /* (與 V4.1 相同，略) */ }
-        
-        // 補回圖片預覽邏輯
-        function previewImage(url) { const img = document.getElementById('preview-img'), icon = document.getElementById('preview-icon'); if(url) { img.src = url; img.classList.remove('hidden'); icon.classList.add('hidden'); } else { img.classList.add('hidden'); icon.classList.remove('hidden'); } }
     </script>
 </body>
 </html>
