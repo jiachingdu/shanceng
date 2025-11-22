@@ -15,22 +15,30 @@
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .btn-press:active { transform: scale(0.95); }
         .transition-all-300 { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* 跑馬燈動畫 */
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 20s linear infinite; }
         .animate-marquee:hover { animation-play-state: paused; }
+
+        /* 鎖定背景捲動 */
         .body-lock { overflow: hidden; height: 100vh; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 pb-32">
 
+    <!-- ★★★ 請確認這裡是 GAS 最新網址 ★★★ -->
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyeUwNCmlOw-fDt-g8fKWj9N9ue9XDZPGOY0tyntNvAXm6rp33oyqmTssA4JbJxcxg5/exec";
     </script>
 
+    <!-- 頂部 Header -->
     <header class="bg-white sticky top-0 z-40 shadow-sm transition-all duration-300" id="main-header">
         <div class="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center space-x-2">
-                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-orange-200 shadow-lg"><i class="fas fa-utensils text-sm"></i></div>
+                <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-orange-200 shadow-lg">
+                    <i class="fas fa-utensils text-sm"></i>
+                </div>
                 <h1 class="text-lg font-bold tracking-wide text-gray-800">山層點餐</h1>
             </div>
             <button onclick="showAnnouncement()" class="relative p-2 text-gray-400 hover:text-orange-500 transition-colors">
@@ -40,20 +48,29 @@
         </div>
     </header>
 
+    <!-- 分類導航 (Sticky) -->
     <div id="category-nav" class="sticky top-14 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 py-3 hidden transition-all-300">
         <div class="max-w-md mx-auto flex overflow-x-auto no-scrollbar px-4 space-x-3" id="category-list"></div>
     </div>
 
+    <!-- 主要內容區 -->
     <main class="max-w-md mx-auto px-4 pt-4 min-h-screen">
+        
         <div id="page-menu" class="animate-fade-in">
+            <!-- 跑馬燈區塊 -->
             <div id="marquee-section" class="bg-orange-50 border border-orange-100 rounded-xl overflow-hidden relative h-10 flex items-center mb-4 hidden shadow-sm">
                 <div class="w-full flex items-center px-3">
                     <i class="fas fa-bullhorn text-orange-500 text-sm mr-2 z-10"></i>
-                    <div class="flex-1 overflow-hidden relative h-full flex items-center"><div id="marquee-text" class="animate-marquee text-sm text-orange-800 font-medium w-full pl-2">讀取中...</div></div>
+                    <div class="flex-1 overflow-hidden relative h-full flex items-center">
+                        <div id="marquee-text" class="animate-marquee text-sm text-orange-800 font-medium w-full pl-2">讀取中...</div>
+                    </div>
                 </div>
             </div>
+
             <div id="loading-skeleton" class="space-y-4 mt-2">
-                <div class="h-32 bg-gray-200 rounded-xl skeleton"></div><div class="h-24 bg-gray-200 rounded-xl skeleton"></div><div class="h-24 bg-gray-200 rounded-xl skeleton"></div>
+                <div class="h-32 bg-gray-200 rounded-xl skeleton"></div>
+                <div class="h-24 bg-gray-200 rounded-xl skeleton"></div>
+                <div class="h-24 bg-gray-200 rounded-xl skeleton"></div>
             </div>
             <div id="menu-container" class="space-y-6 hidden pb-20"></div>
         </div>
@@ -73,40 +90,64 @@
         </div>
     </main>
 
+    <!-- 底部導航列 -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 flex justify-around h-16 items-start max-w-md mx-auto">
         <button onclick="switchTab('menu')" id="tab-menu" class="flex flex-col items-center space-y-1 w-16 text-orange-500 transition-colors duration-300"><i class="fas fa-utensils text-xl mb-0.5"></i><span class="text-[10px] font-medium">點餐</span></button>
         <button onclick="switchTab('search')" id="tab-search" class="flex flex-col items-center space-y-1 w-16 text-gray-400 hover:text-gray-600 transition-colors duration-300"><i class="fas fa-receipt text-xl mb-0.5"></i><span class="text-[10px] font-medium">訂單</span></button>
     </nav>
 
+    <!-- 浮動購物車條 -->
     <div id="floating-cart" onclick="toggleCart()" class="fixed bottom-20 left-4 right-4 max-w-[calc(100%-2rem)] md:max-w-[26rem] md:left-1/2 md:-translate-x-1/2 bg-gray-900 text-white rounded-full p-4 shadow-2xl z-30 flex justify-between items-center transform translate-y-[150%] transition-transform duration-500 cursor-pointer btn-press">
         <div class="flex items-center"><div class="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mr-3" id="float-count">0</div><span class="font-medium text-sm">查看購物車</span></div>
         <span class="font-bold text-lg" id="float-total">$0</span>
     </div>
 
+    <!-- 購物車 Modal -->
     <div id="cart-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity opacity-0" id="cart-backdrop" onclick="toggleCart()"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[90vh] flex flex-col" id="cart-panel">
-            <div class="w-full flex justify-center pt-3 pb-1" onclick="toggleCart()"><div class="w-12 h-1.5 bg-gray-300 rounded-full"></div></div>
+            
+            <!-- 把手 -->
+            <div class="w-full flex justify-center pt-3 pb-1" onclick="toggleCart()">
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <!-- 標題列 (含返回箭頭) -->
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center relative">
-                <button onclick="toggleCart()" class="text-gray-300 hover:text-gray-500 p-2 -ml-2 transition-colors"><i class="fas fa-chevron-left text-lg"></i></button>
+                <button onclick="toggleCart()" class="text-gray-300 hover:text-gray-500 p-2 -ml-2 transition-colors">
+                    <i class="fas fa-chevron-left text-lg"></i>
+                </button>
                 <h2 class="text-xl font-bold text-gray-800 absolute left-1/2 transform -translate-x-1/2">您的餐點</h2>
                 <button onclick="clearCart()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-md hover:bg-red-100 transition-colors">清空</button>
             </div>
+
+            <!-- 列表區 -->
             <div class="flex-1 overflow-y-auto p-6 space-y-4 min-h-[200px]" id="cart-items"></div>
+
+            <!-- 結帳區 -->
             <div class="p-6 bg-gray-50 border-t border-gray-100 pb-safe">
-                <div class="flex justify-between items-center mb-6"><span class="text-gray-500 font-medium">總計金額</span><span class="text-3xl font-bold text-gray-900" id="cart-total-modal">$0</span></div>
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-gray-500 font-medium">總計金額</span>
+                    <span class="text-3xl font-bold text-gray-900" id="cart-total-modal">$0</span>
+                </div>
+                
                 <div class="space-y-3 mb-4">
                     <input type="text" id="customer-name" placeholder="怎麼稱呼您？" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                     <input type="tel" id="customer-phone" placeholder="聯絡電話" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                     <input type="text" id="order-note" placeholder="備註 (例如：微辣、切塊)" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                 </div>
-                <button onclick="submitOrder()" id="submit-btn" class="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg btn-press transition-all flex justify-center items-center">確認送出</button>
+
+                <button onclick="submitOrder()" id="submit-btn" class="w-full bg-gray-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg btn-press transition-all flex justify-center items-center">
+                    確認送出
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Toast -->
     <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-xs space-y-2 pointer-events-none"></div>
 
+    <!-- 公告 Modal -->
     <div id="announcement-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAnnouncement()"></div>
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full relative z-10 shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="announcement-box">
@@ -118,26 +159,249 @@
     </div>
 
     <script>
-        let menuData = []; let cart = []; let isSubmitting = false; let activeCategory = '';
+        let menuData = [];
+        let cart = [];
+        let isSubmitting = false;
+        let activeCategory = '';
+
         window.onload = async function() { await fetchMenu(); };
-        function showToast(message, type = 'success') { const container = document.getElementById('toast-container'), toast = document.createElement('div'), icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-exclamation-circle text-red-500"></i>'; toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`; toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0')); setTimeout(() => { toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 500); }, 3000); }
-        function switchTab(tab) { const menuPage = document.getElementById('page-menu'), searchPage = document.getElementById('page-search'), menuTab = document.getElementById('tab-menu'), searchTab = document.getElementById('tab-search'), catNav = document.getElementById('category-nav'); if (tab === 'menu') { menuPage.classList.remove('hidden'); searchPage.classList.add('hidden'); menuTab.classList.add('text-orange-500'); menuTab.classList.remove('text-gray-400'); searchTab.classList.remove('text-orange-500'); searchTab.classList.add('text-gray-400'); if(menuData.length > 0) catNav.classList.remove('hidden'); } else { menuPage.classList.add('hidden'); searchPage.classList.remove('hidden'); menuTab.classList.remove('text-orange-500'); menuTab.classList.add('text-gray-400'); searchTab.classList.add('text-orange-500'); searchTab.classList.remove('text-gray-400'); catNav.classList.add('hidden'); } }
-        async function fetchMenu() { try { const response = await fetch(API_URL); const json = await response.json(); if (json.status === 'success') { menuData = json.data.menu; renderCategoryNav(menuData); renderMenu(menuData); setupAnnouncement(json.data.settings); setupMarquee(json.data.settings); document.getElementById('loading-skeleton').classList.add('hidden'); document.getElementById('menu-container').classList.remove('hidden'); document.getElementById('category-nav').classList.remove('hidden'); } } catch (e) { console.error(e); showToast('無法連線，請檢查網路', 'error'); } }
-        function setupMarquee(settings) { const marqueeSetting = settings.find(s => s.key === 'marquee'), marqueeSection = document.getElementById('marquee-section'), marqueeText = document.getElementById('marquee-text'); if (marqueeSetting && marqueeSetting.active) { marqueeText.textContent = marqueeSetting.value; marqueeSection.classList.remove('hidden'); } else { marqueeSection.classList.add('hidden'); } }
-        function renderCategoryNav(menu) { const categories = [...new Set(menu.map(item => item.category))].filter(c => c), container = document.getElementById('category-list'); let html = `<button onclick="filterCategory('all')" class="cat-btn px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all bg-gray-900 text-white shadow-md" data-cat="all">全部</button>`; categories.forEach(cat => { html += `<button onclick="filterCategory('${cat}')" class="cat-btn px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 bg-gray-100 whitespace-nowrap hover:bg-gray-200 transition-all" data-cat="${cat}">${cat}</button>`; }); container.innerHTML = html; }
-        function filterCategory(cat) { activeCategory = cat; document.querySelectorAll('.cat-btn').forEach(btn => { if (btn.dataset.cat === cat) { btn.className = "cat-btn px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all bg-gray-900 text-white shadow-md transform scale-105"; } else { btn.className = "cat-btn px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 bg-gray-100 whitespace-nowrap hover:bg-gray-200 transition-all"; } }); if (cat === 'all') { window.scrollTo({ top: 0, behavior: 'smooth' }); } else { const element = document.getElementById(`cat-${cat}`); if (element) { const offset = 160, bodyRect = document.body.getBoundingClientRect().top, elementRect = element.getBoundingClientRect().top, elementPosition = elementRect - bodyRect, offsetPosition = elementPosition - offset; window.scrollTo({ top: offsetPosition, behavior: "smooth" }); } } }
-        function setupAnnouncement(settings) { const ann = settings.find(s => s.key === 'announcement'); if (ann && ann.active) { document.getElementById('announcement-content').textContent = ann.value; document.getElementById('bell-dot').classList.remove('hidden'); } }
-        function showAnnouncement() { const modal = document.getElementById('announcement-modal'), box = document.getElementById('announcement-box'); modal.classList.remove('hidden'); setTimeout(() => { box.classList.remove('scale-95', 'opacity-0'); box.classList.add('scale-100', 'opacity-100'); }, 10); }
-        function closeAnnouncement() { const modal = document.getElementById('announcement-modal'), box = document.getElementById('announcement-box'); box.classList.remove('scale-100', 'opacity-100'); box.classList.add('scale-95', 'opacity-0'); setTimeout(() => modal.classList.add('hidden'), 300); }
-        function renderMenu(menu) { const container = document.getElementById('menu-container'); container.innerHTML = ''; const categories = [...new Set(menu.map(item => item.category))].filter(c => c); categories.forEach(cat => { const items = menu.filter(item => item.category === cat); let categoryHtml = `<div id="cat-${cat}" class="pt-2"><h3 class="text-xl font-bold text-gray-800 mb-4 px-1 flex items-center">${cat}<span class="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">${items.length}</span></h3><div class="grid gap-4">`; items.forEach(item => { const isAvail = (item.available === true || item.available === "TRUE"), imageHtml = item.image ? `<img src="${item.image}" class="w-24 h-24 object-cover rounded-xl" onerror="this.style.display='none'">` : `<div class="w-24 h-24 bg-gray-50 rounded-xl flex items-center justify-center text-gray-300"><i class="fas fa-utensils text-2xl"></i></div>`; categoryHtml += `<div onclick="${isAvail ? `addToCart('${item.id}')` : ''}" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-50 flex items-center space-x-4 btn-press transition-all ${!isAvail ? 'opacity-60 grayscale pointer-events-none' : 'cursor-pointer'}">${imageHtml}<div class="flex-1 h-24 flex flex-col justify-between py-1"><div><h4 class="font-bold text-gray-800 line-clamp-1">${item.name}</h4><p class="text-xs text-gray-400 mt-1 line-clamp-2">${item.description || '暫無介紹'}</p></div><div class="flex justify-between items-end"><span class="font-bold text-lg text-gray-900">$${item.price}</span>${isAvail ? `<button class="w-8 h-8 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white transition-colors shadow-sm"><i class="fas fa-plus text-xs"></i></button>` : `<span class="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-md">售完</span>`}</div></div></div>`; }); categoryHtml += `</div></div>`; container.innerHTML += categoryHtml; }); }
-        function addToCart(id) { const item = menuData.find(i => i.id == id), exist = cart.find(c => c.id == id); if (exist) exist.count++; else cart.push({ ...item, count: 1 }); if (navigator.vibrate) navigator.vibrate(50); updateCartUI(); }
-        function changeQuantity(id, delta) { const item = cart.find(c => c.id == id); if (item) { item.count += delta; if (item.count <= 0) cart = cart.filter(c => c.id != id); } updateCartUI(); }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-exclamation-circle text-red-500"></i>';
+            toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`;
+            toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0'));
+            setTimeout(() => { toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 500); }, 3000);
+        }
+
+        function switchTab(tab) {
+            const menuPage = document.getElementById('page-menu');
+            const searchPage = document.getElementById('page-search');
+            const menuTab = document.getElementById('tab-menu');
+            const searchTab = document.getElementById('tab-search');
+            const catNav = document.getElementById('category-nav');
+
+            if (tab === 'menu') {
+                menuPage.classList.remove('hidden');
+                searchPage.classList.add('hidden');
+                menuTab.classList.add('text-orange-500');
+                menuTab.classList.remove('text-gray-400');
+                searchTab.classList.remove('text-orange-500');
+                searchTab.classList.add('text-gray-400');
+                if(menuData.length > 0) catNav.classList.remove('hidden');
+            } else {
+                menuPage.classList.add('hidden');
+                searchPage.classList.remove('hidden');
+                menuTab.classList.remove('text-orange-500');
+                menuTab.classList.add('text-gray-400');
+                searchTab.classList.add('text-orange-500');
+                searchTab.classList.remove('text-gray-400');
+                catNav.classList.add('hidden');
+            }
+        }
+
+        async function fetchMenu() {
+            try {
+                // ★★★ 加上時間戳記，強制抓取最新資料 ★★★
+                const response = await fetch(`${API_URL}?t=${new Date().getTime()}`);
+                const json = await response.json();
+                if (json.status === 'success') {
+                    menuData = json.data.menu;
+                    renderCategoryNav(menuData);
+                    renderMenu(menuData);
+                    setupAnnouncement(json.data.settings);
+                    setupMarquee(json.data.settings);
+                    
+                    document.getElementById('loading-skeleton').classList.add('hidden');
+                    document.getElementById('menu-container').classList.remove('hidden');
+                    document.getElementById('category-nav').classList.remove('hidden');
+                }
+            } catch (e) { console.error(e); showToast('無法連線，請檢查網路', 'error'); }
+        }
+
+        function setupMarquee(settings) {
+            const marqueeSetting = settings.find(s => s.key === 'marquee');
+            const marqueeSection = document.getElementById('marquee-section');
+            const marqueeText = document.getElementById('marquee-text');
+            if (marqueeSetting && marqueeSetting.active) {
+                marqueeText.textContent = marqueeSetting.value;
+                marqueeSection.classList.remove('hidden');
+            } else { marqueeSection.classList.add('hidden'); }
+        }
+
+        function renderCategoryNav(menu) {
+            const categories = [...new Set(menu.map(item => item.category))].filter(c => c);
+            const container = document.getElementById('category-list');
+            let html = `<button onclick="filterCategory('all')" class="cat-btn px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all bg-gray-900 text-white shadow-md" data-cat="all">全部</button>`;
+            categories.forEach(cat => {
+                html += `<button onclick="filterCategory('${cat}')" class="cat-btn px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 bg-gray-100 whitespace-nowrap hover:bg-gray-200 transition-all" data-cat="${cat}">${cat}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if (btn.dataset.cat === cat) {
+                    btn.className = "cat-btn px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-all bg-gray-900 text-white shadow-md transform scale-105";
+                } else {
+                    btn.className = "cat-btn px-4 py-1.5 rounded-full text-sm font-medium text-gray-500 bg-gray-100 whitespace-nowrap hover:bg-gray-200 transition-all";
+                }
+            });
+            if (cat === 'all') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                const element = document.getElementById(`cat-${cat}`);
+                if (element) {
+                    const offset = 160;
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = element.getBoundingClientRect().top;
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                }
+            }
+        }
+
+        function setupAnnouncement(settings) {
+            const ann = settings.find(s => s.key === 'announcement');
+            if (ann && ann.active) {
+                document.getElementById('announcement-content').textContent = ann.value;
+                document.getElementById('bell-dot').classList.remove('hidden');
+            }
+        }
+        function showAnnouncement() {
+            const modal = document.getElementById('announcement-modal');
+            const box = document.getElementById('announcement-box');
+            modal.classList.remove('hidden');
+            setTimeout(() => { box.classList.remove('scale-95', 'opacity-0'); box.classList.add('scale-100', 'opacity-100'); }, 10);
+        }
+        function closeAnnouncement() {
+            const modal = document.getElementById('announcement-modal');
+            const box = document.getElementById('announcement-box');
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function renderMenu(menu) {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+            const categories = [...new Set(menu.map(item => item.category))].filter(c => c);
+            categories.forEach(cat => {
+                const items = menu.filter(item => item.category === cat);
+                let categoryHtml = `<div id="cat-${cat}" class="pt-2"><h3 class="text-xl font-bold text-gray-800 mb-4 px-1 flex items-center">${cat}<span class="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">${items.length}</span></h3><div class="grid gap-4">`;
+                items.forEach(item => {
+                    const isAvail = (item.available === true || item.available === "TRUE");
+                    const imageHtml = item.image ? `<img src="${item.image}" class="w-24 h-24 object-cover rounded-xl" onerror="this.style.display='none'">` : `<div class="w-24 h-24 bg-gray-50 rounded-xl flex items-center justify-center text-gray-300"><i class="fas fa-utensils text-2xl"></i></div>`;
+                    categoryHtml += `<div onclick="${isAvail ? `addToCart('${item.id}')` : ''}" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-50 flex items-center space-x-4 btn-press transition-all ${!isAvail ? 'opacity-60 grayscale pointer-events-none' : 'cursor-pointer'}">${imageHtml}<div class="flex-1 h-24 flex flex-col justify-between py-1"><div><h4 class="font-bold text-gray-800 line-clamp-1">${item.name}</h4><p class="text-xs text-gray-400 mt-1 line-clamp-2">${item.description || '暫無介紹'}</p></div><div class="flex justify-between items-end"><span class="font-bold text-lg text-gray-900">$${item.price}</span>${isAvail ? `<button class="w-8 h-8 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white transition-colors shadow-sm"><i class="fas fa-plus text-xs"></i></button>` : `<span class="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-md">售完</span>`}</div></div></div>`;
+                });
+                categoryHtml += `</div></div>`;
+                container.innerHTML += categoryHtml;
+            });
+        }
+
+        function addToCart(id) {
+            const item = menuData.find(i => i.id == id);
+            const exist = cart.find(c => c.id == id);
+            if (exist) exist.count++; else cart.push({ ...item, count: 1 });
+            if (navigator.vibrate) navigator.vibrate(50);
+            updateCartUI();
+        }
+        function changeQuantity(id, delta) {
+            const item = cart.find(c => c.id == id);
+            if (item) { item.count += delta; if (item.count <= 0) cart = cart.filter(c => c.id != id); }
+            updateCartUI();
+        }
         function clearCart() { if(confirm('確定要清空購物車嗎？')) { cart = []; updateCartUI(); toggleCart(); } }
-        function updateCartUI() { const totalCount = cart.reduce((sum, i) => sum + i.count, 0), floatBar = document.getElementById('floating-cart'), cartItemsContainer = document.getElementById('cart-items'); document.getElementById('float-count').textContent = totalCount; let totalAmount = 0, itemsHtml = ''; if (cart.length === 0) { floatBar.classList.add('translate-y-[150%]'); itemsHtml = `<div class="flex flex-col items-center justify-center py-10 text-gray-300"><i class="fas fa-shopping-cart text-5xl mb-4 opacity-50"></i><p class="text-sm">購物車還是空的</p><p class="text-xs mt-1">快去點些好吃的吧！</p></div>`; } else { floatBar.classList.remove('translate-y-[150%]'); cart.forEach(item => { totalAmount += item.price * item.count; itemsHtml += `<div class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-50 shadow-sm"><div class="flex-1"><h5 class="font-bold text-gray-800">${item.name}</h5><p class="text-xs text-gray-400">$${item.price} / 份</p></div><div class="flex items-center bg-gray-50 rounded-lg p-1"><button onclick="changeQuantity('${item.id}', -1)" class="w-7 h-7 bg-white rounded-md shadow-sm text-gray-600 flex items-center justify-center btn-press"><i class="fas fa-minus text-[10px]"></i></button><span class="w-8 text-center text-sm font-bold text-gray-700">${item.count}</span><button onclick="changeQuantity('${item.id}', 1)" class="w-7 h-7 bg-gray-900 text-white rounded-md shadow-sm flex items-center justify-center btn-press"><i class="fas fa-plus text-[10px]"></i></button></div><div class="w-16 text-right font-bold text-gray-800">$${item.price * item.count}</div></div>`; }); } cartItemsContainer.innerHTML = itemsHtml; document.getElementById('float-total').textContent = '$' + totalAmount; document.getElementById('cart-total-modal').textContent = '$' + totalAmount; }
-        function toggleCart() { if (cart.length === 0 && document.getElementById('cart-modal').classList.contains('hidden')) return; const modal = document.getElementById('cart-modal'), backdrop = document.getElementById('cart-backdrop'), panel = document.getElementById('cart-panel'); if (modal.classList.contains('hidden')) { document.body.classList.add('body-lock'); modal.classList.remove('hidden'); requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); }); } else { document.body.classList.remove('body-lock'); backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full'); setTimeout(() => { modal.classList.add('hidden'); }, 300); } }
-        function submitOrder() { if (cart.length === 0) return showToast('購物車是空的', 'error'); const name = document.getElementById('customer-name').value.trim(), phone = document.getElementById('customer-phone').value.trim(), note = document.getElementById('order-note').value.trim(); if (!name || !phone) return showToast('請填寫稱呼與電話', 'error'); if (isSubmitting) return; isSubmitting = true; const btn = document.getElementById('submit-btn'), originalText = btn.innerHTML; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>處理中...'; btn.classList.add('opacity-70', 'pointer-events-none'); const data = { customerName: name, phone: phone, note: note, totalAmount: cart.reduce((s, i) => s + (i.price * i.count), 0), items: cart.map(i => ({ name: i.name, count: i.count, price: i.price })) }; fetch(API_URL, { method: 'POST', body: JSON.stringify(data), headers: { "Content-Type": "text/plain;charset=utf-8" } }).then(res => res.json()).then(json => { if (json.status === 'success') { showToast('訂單送出成功！', 'success'); toggleCart(); cart = []; updateCartUI(); document.getElementById('order-note').value = ''; document.getElementById('search-phone').value = phone; switchTab('search'); searchOrder(); } else { showToast('失敗：' + json.message, 'error'); } }).catch(e => { showToast('已送出，請留意老闆通知', 'success'); toggleCart(); cart = []; updateCartUI(); }).finally(() => { isSubmitting = false; btn.innerHTML = originalText; btn.classList.remove('opacity-70', 'pointer-events-none'); }); }
-        
-        // ★★★ 查詢訂單 (包含取消功能) ★★★
+
+        // ★★★ 關鍵修改：購物車 UI 增加圖片 ★★★
+        function updateCartUI() {
+            const totalCount = cart.reduce((sum, i) => sum + i.count, 0);
+            const floatBar = document.getElementById('floating-cart');
+            const cartItemsContainer = document.getElementById('cart-items');
+            document.getElementById('float-count').textContent = totalCount;
+            let totalAmount = 0;
+            let itemsHtml = '';
+            if (cart.length === 0) {
+                floatBar.classList.add('translate-y-[150%]');
+                itemsHtml = `<div class="flex flex-col items-center justify-center py-10 text-gray-300"><i class="fas fa-shopping-cart text-5xl mb-4 opacity-50"></i><p class="text-sm">購物車還是空的</p><p class="text-xs mt-1">快去點些好吃的吧！</p></div>`;
+            } else {
+                floatBar.classList.remove('translate-y-[150%]');
+                cart.forEach(item => {
+                    totalAmount += item.price * item.count;
+                    
+                    // 圖片處理
+                    const imgHtml = item.image 
+                        ? `<img src="${item.image}" class="w-12 h-12 object-cover rounded-lg mr-3 border border-gray-100" onerror="this.style.display='none'">` 
+                        : `<div class="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex items-center justify-center text-gray-300 text-xs border border-gray-200"><i class="fas fa-utensils"></i></div>`;
+
+                    itemsHtml += `
+                        <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-50 shadow-sm">
+                            <div class="flex items-center flex-1 min-w-0">
+                                ${imgHtml}
+                                <div class="truncate">
+                                    <h5 class="font-bold text-gray-800 truncate">${item.name}</h5>
+                                    <p class="text-xs text-gray-400">$${item.price} / 份</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center bg-gray-50 rounded-lg p-1 ml-2">
+                                <button onclick="changeQuantity('${item.id}', -1)" class="w-7 h-7 bg-white rounded-md shadow-sm text-gray-600 flex items-center justify-center btn-press"><i class="fas fa-minus text-[10px]"></i></button>
+                                <span class="w-8 text-center text-sm font-bold text-gray-700">${item.count}</span>
+                                <button onclick="changeQuantity('${item.id}', 1)" class="w-7 h-7 bg-gray-900 text-white rounded-md shadow-sm flex items-center justify-center btn-press"><i class="fas fa-plus text-[10px]"></i></button>
+                            </div>
+                            <div class="w-16 text-right font-bold text-gray-800 ml-2">$${item.price * item.count}</div>
+                        </div>`;
+                });
+            }
+            cartItemsContainer.innerHTML = itemsHtml;
+            document.getElementById('float-total').textContent = '$' + totalAmount;
+            document.getElementById('cart-total-modal').textContent = '$' + totalAmount;
+        }
+
+        function toggleCart() {
+            if (cart.length === 0 && document.getElementById('cart-modal').classList.contains('hidden')) return;
+            const modal = document.getElementById('cart-modal');
+            const backdrop = document.getElementById('cart-backdrop');
+            const panel = document.getElementById('cart-panel');
+            
+            if (modal.classList.contains('hidden')) {
+                document.body.classList.add('body-lock'); // 鎖住
+                modal.classList.remove('hidden');
+                requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); });
+            } else {
+                document.body.classList.remove('body-lock'); // 解鎖
+                backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full');
+                setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            }
+        }
+
+        function submitOrder() {
+            if (cart.length === 0) return showToast('購物車是空的', 'error');
+            const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
+            const note = document.getElementById('order-note').value.trim();
+            if (!name || !phone) return showToast('請填寫稱呼與電話', 'error');
+            if (isSubmitting) return;
+            isSubmitting = true;
+            const btn = document.getElementById('submit-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>處理中...';
+            btn.classList.add('opacity-70', 'pointer-events-none');
+            const data = { customerName: name, phone: phone, note: note, totalAmount: cart.reduce((s, i) => s + (i.price * i.count), 0), items: cart.map(i => ({ name: i.name, count: i.count, price: i.price })) };
+            fetch(API_URL, { method: 'POST', body: JSON.stringify(data), headers: { "Content-Type": "text/plain;charset=utf-8" } })
+            .then(res => res.json()).then(json => {
+                if (json.status === 'success') {
+                    showToast('訂單送出成功！', 'success');
+                    toggleCart(); cart = []; updateCartUI(); document.getElementById('order-note').value = '';
+                    document.getElementById('search-phone').value = phone; switchTab('search'); searchOrder();
+                } else { showToast('失敗：' + json.message, 'error'); }
+            }).catch(e => { showToast('已送出，請留意老闆通知', 'success'); toggleCart(); cart = []; updateCartUI(); })
+            .finally(() => { isSubmitting = false; btn.innerHTML = originalText; btn.classList.remove('opacity-70', 'pointer-events-none'); });
+        }
         function searchOrder() {
             const phone = document.getElementById('search-phone').value.trim();
             if (!phone) return showToast('請輸入電話', 'error');
@@ -169,7 +433,6 @@
                             borderClass = 'border-l-4 border-gray-300';
                         }
 
-                        // ★★★ 關鍵修改：傳遞按鈕本身 (this) 給 cancelOrder ★★★
                         if (status === 'pending' || status === 'confirmed') {
                             cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`;
                         }
@@ -200,11 +463,9 @@
             }).catch(e => { container.innerHTML = `<div class="text-center text-red-400 py-4">查詢失敗，請稍後再試</div>`; });
         }
 
-        // ★★★ 關鍵修改：接收按鈕物件並立即回饋 ★★★
         function cancelOrder(orderId, btn) {
             if(!confirm('確定要取消這筆訂單嗎？')) return;
             
-            // 立即 UI 回饋
             if(btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>取消中...';
@@ -218,10 +479,9 @@
             }).then(res => res.json()).then(json => {
                 if(json.status === 'success') {
                     showToast('訂單已取消');
-                    searchOrder(); // 重新整理列表
+                    searchOrder();
                 } else {
                     showToast(json.message, 'error');
-                    // 如果失敗，復原按鈕
                     if(btn) {
                         btn.disabled = false;
                         btn.innerHTML = '取消訂單';
