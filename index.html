@@ -173,7 +173,7 @@
             toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`;
             toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`;
             container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0'));
+            requestAnimationFrame(() => { toast.classList.remove('-translate-y-10', 'opacity-0'); });
             setTimeout(() => { toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 500); }, 3000);
         }
 
@@ -205,7 +205,7 @@
 
         async function fetchMenu() {
             try {
-                // ★★★ 加上時間戳記，強制抓取最新資料 ★★★
+                // 加上時間戳記，強制抓取最新資料
                 const response = await fetch(`${API_URL}?t=${new Date().getTime()}`);
                 const json = await response.json();
                 if (json.status === 'success') {
@@ -213,7 +213,9 @@
                     renderCategoryNav(menuData);
                     renderMenu(menuData);
                     setupAnnouncement(json.data.settings);
-                    setupMarquee(json.data.settings);
+                    
+                    // ★★★ 關鍵修正：讀取 marquees 陣列，而不是 settings ★★★
+                    setupMarquee(json.data.marquees);
                     
                     document.getElementById('loading-skeleton').classList.add('hidden');
                     document.getElementById('menu-container').classList.remove('hidden');
@@ -222,14 +224,20 @@
             } catch (e) { console.error(e); showToast('無法連線，請檢查網路', 'error'); }
         }
 
-        function setupMarquee(settings) {
-            const marqueeSetting = settings.find(s => s.key === 'marquee');
+        // ★★★ 關鍵修正：跑馬燈讀取邏輯 ★★★
+        function setupMarquee(marquees) {
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
-            if (marqueeSetting && marqueeSetting.active) {
-                marqueeText.textContent = marqueeSetting.value;
+
+            // 檢查是否有跑馬燈資料
+            if (marquees && marquees.length > 0) {
+                // 把所有啟用中的跑馬燈串起來，中間用 | 分隔
+                const content = marquees.map(m => m.content).join('   |   ');
+                marqueeText.textContent = content;
                 marqueeSection.classList.remove('hidden');
-            } else { marqueeSection.classList.add('hidden'); }
+            } else {
+                marqueeSection.classList.add('hidden'); 
+            }
         }
 
         function renderCategoryNav(menu) {
