@@ -90,7 +90,6 @@
         function showToast(message, type = 'success') { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-exclamation-circle text-red-500"></i>'; toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`; toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0')); setTimeout(() => { toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 500); }, 3000); }
         function switchTab(tab) { const pageOrders = document.getElementById('page-orders'), pageMenu = document.getElementById('page-menu'), tabOrders = document.getElementById('tab-orders'), tabMenu = document.getElementById('tab-menu'); if(tab === 'orders') { pageOrders.classList.remove('hidden'); pageMenu.classList.add('hidden'); tabOrders.classList.add('text-orange-500'); tabOrders.classList.remove('text-gray-400'); tabMenu.classList.remove('text-orange-500'); tabMenu.classList.add('text-gray-400'); fetchOrders(); } else { pageOrders.classList.add('hidden'); pageMenu.classList.remove('hidden'); tabMenu.classList.add('text-orange-500'); tabMenu.classList.remove('text-gray-400'); tabOrders.classList.remove('text-orange-500'); tabOrders.classList.add('text-gray-400'); fetchMenu(); } }
 
-        // --- 訂單管理核心邏輯 ---
         async function fetchOrders() {
             const container = document.getElementById('orders-list');
             try {
@@ -105,15 +104,13 @@
                         const status = order.status;
                         const isFinished = status === 'finished' || status === 'cancelled';
                         
-                        // ★★★ 關鍵修改：改成讀取 timestamp，並做相容處理 ★★★
+                        // 時間修復：讀取 timestamp 欄位 (Google Sheet V4.1 後端格式)
                         const dateStr = order.timestamp || order.time; 
                         const date = new Date(dateStr);
-                        
                         const hh = String(date.getHours()).padStart(2,'0');
                         const mm = String(date.getMinutes()).padStart(2,'0');
                         const timeStr = (isNaN(date.getTime())) ? '--:--' : `${hh}:${mm}`;
 
-                        // 狀態 UI
                         let statusBadge = '', btnHtml = '', cardStyle = '';
                         if (status === 'pending') {
                             statusBadge = `<span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-lg">訂單成立</span>`;
@@ -132,9 +129,10 @@
                             cardStyle = 'opacity-50 grayscale';
                         }
 
+                        // ★★★ 傳遞按鈕本身 (this) ★★★
                         let cancelBtn = '';
                         if (!isFinished) {
-                            cancelBtn = `<button onclick="cancelOrder('${order.orderId}')" class="text-xs text-red-400 font-medium underline mt-3 block text-center w-full hover:text-red-600">取消訂單</button>`;
+                            cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-3 block text-center w-full hover:text-red-600">取消訂單</button>`;
                         }
 
                         container.innerHTML += `
@@ -181,8 +179,18 @@
             });
         }
 
-        function cancelOrder(orderId) {
+        // ★★★ 新增：按鈕即時回饋邏輯 ★★★
+        function cancelOrder(orderId, btn) {
             if(!confirm('確定要取消這筆訂單嗎？')) return;
+            
+            // 立即 UI 回饋
+            if(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 取消中...';
+                btn.classList.add('text-gray-400', 'cursor-not-allowed');
+                btn.classList.remove('text-red-400', 'hover:text-red-600', 'underline');
+            }
+
             fetch(API_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'cancel_order', orderId: orderId, role: 'admin' })
@@ -190,7 +198,16 @@
                 if(json.status === 'success') {
                     showToast('訂單已取消');
                     fetchOrders();
-                } else showToast(json.message, 'error');
+                } else {
+                    showToast(json.message, 'error');
+                    // 失敗時復原按鈕
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '取消訂單';
+                        btn.classList.remove('text-gray-400', 'cursor-not-allowed');
+                        btn.classList.add('text-red-400', 'hover:text-red-600', 'underline');
+                    }
+                }
             });
         }
 
