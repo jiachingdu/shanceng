@@ -42,10 +42,27 @@
 
         <main class="max-w-md mx-auto px-4 pt-4 pb-24">
             <div id="page-orders" class="space-y-4">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-2xl font-bold text-gray-800">今日訂單</h2>
-                    <button onclick="fetchOrders()" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-600 btn-press"><i class="fas fa-sync-alt"></i></button>
+                
+                <!-- ★★★ 新增：日期與狀態篩選器 ★★★ -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center"><i class="far fa-calendar-alt mr-2 text-orange-500"></i>訂單日期</h2>
+                        <div class="flex space-x-2">
+                            <button onclick="setDateFilter('today')" class="text-xs bg-orange-50 text-orange-600 px-3 py-1 rounded-full font-bold hover:bg-orange-100 transition-colors">今日</button>
+                            <button onclick="setDateFilter('yesterday')" class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-bold hover:bg-gray-200 transition-colors">昨日</button>
+                        </div>
+                    </div>
+                    <input type="date" id="date-filter" class="w-full border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-orange-500 outline-none" onchange="fetchOrders()">
+                    
+                    <div class="flex items-center justify-between pt-1 border-t border-gray-50 mt-2">
+                        <label class="flex items-center space-x-2 text-sm text-gray-500 cursor-pointer select-none">
+                            <input type="checkbox" id="show-history" class="w-4 h-4 text-orange-500 rounded focus:ring-orange-500" onchange="fetchOrders()">
+                            <span>顯示已結單/已取消</span>
+                        </label>
+                        <button onclick="fetchOrders()" class="text-blue-500 text-sm font-bold flex items-center"><i class="fas fa-sync-alt mr-1"></i>重整</button>
+                    </div>
                 </div>
+
                 <div id="orders-list" class="space-y-4"><div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div></div>
             </div>
 
@@ -85,26 +102,57 @@
     <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-xs space-y-2 pointer-events-none"></div>
 
     <script>
+        // 初始化：預設選今日
+        window.onload = function() {
+            setDateFilter('today');
+        };
+
+        // --- 日期篩選 ---
+        function setDateFilter(type) {
+            const dateInput = document.getElementById('date-filter');
+            const today = new Date();
+            
+            if (type === 'today') {
+                // 格式化為 YYYY-MM-DD
+                const str = today.toISOString().split('T')[0];
+                dateInput.value = str;
+            } else if (type === 'yesterday') {
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                // 注意時區問題，這裡簡單處理，若跨時區建議用 getTime() 減法
+                // 在台灣簡單減一天通常沒問題，或使用 toLocaleString 格式化
+                const yStr = new Date(yesterday.getTime() - yesterday.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                dateInput.value = yStr;
+            }
+            fetchOrders();
+        }
+
         function checkLogin() { if(document.getElementById('password-input').value === ADMIN_PASSWORD) { document.getElementById('login-overlay').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden'); fetchOrders(); } else { showToast('密碼錯誤', 'error'); document.getElementById('password-input').value = ''; } }
         function logout() { location.reload(); }
         function showToast(message, type = 'success') { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-exclamation-circle text-red-500"></i>'; toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`; toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0')); setTimeout(() => { toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 500); }, 3000); }
         function switchTab(tab) { const pageOrders = document.getElementById('page-orders'), pageMenu = document.getElementById('page-menu'), tabOrders = document.getElementById('tab-orders'), tabMenu = document.getElementById('tab-menu'); if(tab === 'orders') { pageOrders.classList.remove('hidden'); pageMenu.classList.add('hidden'); tabOrders.classList.add('text-orange-500'); tabOrders.classList.remove('text-gray-400'); tabMenu.classList.remove('text-orange-500'); tabMenu.classList.add('text-gray-400'); fetchOrders(); } else { pageOrders.classList.add('hidden'); pageMenu.classList.remove('hidden'); tabMenu.classList.add('text-orange-500'); tabMenu.classList.remove('text-gray-400'); tabOrders.classList.remove('text-orange-500'); tabOrders.classList.add('text-gray-400'); fetchMenu(); } }
 
+        // --- 訂單管理核心邏輯 (含篩選) ---
         async function fetchOrders() {
             const container = document.getElementById('orders-list');
+            const dateVal = document.getElementById('date-filter').value;
+            const showHistory = document.getElementById('show-history').checked;
+            
+            container.innerHTML = '<div class="text-center py-20 text-gray-400"><div class="loader mx-auto mb-2"></div>讀取中...</div>';
+            
             try {
-                const res = await fetch(API_URL + '?type=admin_orders');
+                // 傳送篩選參數給後端
+                const res = await fetch(`${API_URL}?type=admin_orders&date=${dateVal}&history=${showHistory}`);
                 const json = await res.json();
                 container.innerHTML = '';
                 
                 if(json.status === 'success') {
-                    if(json.data.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-gray-300"><i class="fas fa-clipboard-check text-5xl mb-4 opacity-30"></i><p>目前沒有訂單</p></div>`; return; }
+                    if(json.data.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-gray-300"><i class="fas fa-clipboard-check text-5xl mb-4 opacity-30"></i><p>該日期沒有訂單</p></div>`; return; }
 
                     json.data.forEach(order => {
                         const status = order.status;
                         const isFinished = status === 'finished' || status === 'cancelled';
                         
-                        // 時間修復：讀取 timestamp 欄位 (Google Sheet V4.1 後端格式)
                         const dateStr = order.timestamp || order.time; 
                         const date = new Date(dateStr);
                         const hh = String(date.getHours()).padStart(2,'0');
@@ -129,7 +177,6 @@
                             cardStyle = 'opacity-50 grayscale';
                         }
 
-                        // ★★★ 傳遞按鈕本身 (this) ★★★
                         let cancelBtn = '';
                         if (!isFinished) {
                             cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-3 block text-center w-full hover:text-red-600">取消訂單</button>`;
@@ -179,18 +226,14 @@
             });
         }
 
-        // ★★★ 新增：按鈕即時回饋邏輯 ★★★
         function cancelOrder(orderId, btn) {
             if(!confirm('確定要取消這筆訂單嗎？')) return;
-            
-            // 立即 UI 回饋
             if(btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 取消中...';
                 btn.classList.add('text-gray-400', 'cursor-not-allowed');
                 btn.classList.remove('text-red-400', 'hover:text-red-600', 'underline');
             }
-
             fetch(API_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'cancel_order', orderId: orderId, role: 'admin' })
@@ -200,7 +243,6 @@
                     fetchOrders();
                 } else {
                     showToast(json.message, 'error');
-                    // 失敗時復原按鈕
                     if(btn) {
                         btn.disabled = false;
                         btn.innerHTML = '取消訂單';
