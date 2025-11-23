@@ -210,7 +210,7 @@
 
         async function fetchMenu() {
             try {
-                // 加上時間戳記，強制抓取最新資料
+                // ★★★ 加上時間戳記，強制抓取最新資料 ★★★
                 const response = await fetch(`${API_URL}?t=${new Date().getTime()}`);
                 const json = await response.json();
                 if (json.status === 'success') {
@@ -219,8 +219,10 @@
                     renderMenu(menuData);
                     setupAnnouncement(json.data.settings);
                     
-                    // ★★★ 修正重點：讀取新的 marquees 資料結構 ★★★
-                    setupMarquee(json.data.marquees);
+                    // ★★★ 修正重點：讀取新的 marquees 資料結構，增加防呆 ★★★
+                    if (json.data.marquees) {
+                        setupMarquee(json.data.marquees);
+                    }
                     
                     document.getElementById('loading-skeleton').classList.add('hidden');
                     document.getElementById('menu-container').classList.remove('hidden');
@@ -234,9 +236,8 @@
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
 
-            // 檢查是否有跑馬燈資料
             if (marquees && Array.isArray(marquees) && marquees.length > 0) {
-                // 把所有啟用中的跑馬燈串起來，中間用 | 分隔
+                // 用 " | " 串接多條跑馬燈
                 const content = marquees.map(m => m.content).join("   &nbsp;&nbsp;|&nbsp;&nbsp;   ");
                 marqueeText.innerHTML = content;
                 marqueeSection.classList.remove('hidden');
@@ -448,7 +449,7 @@
                             borderClass = 'border-l-4 border-gray-300';
                         }
 
-                        if (status === 'pending' || status === 'confirmed') {
+                        if (status === 'pending') {
                             cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`;
                         }
 
