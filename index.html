@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>山層點餐</title>
+    
+    <!-- ★★★ 1. 這裡改成你要的新標題 ★★★ -->
+    <title>【山層食研所線上點餐】</title>
+
+    <!-- ★★★ 2. 加入這幾行，讓 LINE/FB 抓到正確的預覽文字 ★★★ -->
+    <meta property="og:title" content="【山層食研所線上點餐】">
+    <meta property="og:description" content="嚴選食材，用心製作。立即線上預訂，輕鬆取餐免排隊！點擊查看完整菜單。">
+    <meta property="og:type" content="website">
+    <!-- 給 Google 搜尋引擎看的描述 -->
+    <meta name="description" content="嚴選食材，用心製作。立即線上預訂，輕鬆取餐免排隊！點擊查看完整菜單。">
+
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,10 +34,27 @@
 </head>
 <body class="bg-gray-50 text-gray-800 pb-32">
 
-    <!-- ★★★ 請確認這裡是 GAS 最新網址 ★★★ -->
+    <!-- ★★★ 環境設定區 ★★★ -->
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyeUwNCmlOw-fDt-g8fKWj9N9ue9XDZPGOY0tyntNvAXm6rp33oyqmTssA4JbJxcxg5/exec";
+        // 1. 正式環境 (Prod) - 這是你原本的正式網址
+        const PROD_API_URL = "https://script.google.com/macros/s/AKfycbyeUwNCmlOw-fDt-g8fKWj9N9ue9XDZPGOY0tyntNvAXm6rp33oyqmTssA4JbJxcxg5/exec";
         
+        // 2. 測試環境 (Dev) - 這是你的測試網址
+        const DEV_API_URL = "https://script.google.com/macros/s/AKfycby5BAoiagTWPjT6N7bzKyCp8xWygYosJ7daVBNG8-f1JuLBviMbxALanh9WqTihYv76tQ/exec";
+        
+        // 自動切換邏輯
+        const isDevEnv = window.location.href.includes('dev') || 
+                         window.location.hostname === '127.0.0.1' || 
+                         window.location.hostname === 'localhost';
+
+        const API_URL = isDevEnv ? DEV_API_URL : PROD_API_URL;
+
+        if (isDevEnv) {
+             // 如果是測試環境，標題前加【測試】
+             document.title = "【測試】" + document.title;
+             console.log('🔧 目前處於 [測試開發模式] - 連線至測試資料庫');
+        }
+
         // 預設營業時間
         let OPEN_HOUR = 10;  
         let CLOSE_HOUR = 13; 
@@ -40,7 +67,8 @@
                 <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-orange-200 shadow-lg">
                     <i class="fas fa-utensils text-sm"></i>
                 </div>
-                <h1 class="text-lg font-bold tracking-wide text-gray-800">山層點餐</h1>
+                <!-- 這裡我也幫你改成新名稱了 -->
+                <h1 class="text-lg font-bold tracking-wide text-gray-800">山層食研所</h1>
             </div>
             <button onclick="showAnnouncement()" class="relative p-2 text-gray-400 hover:text-orange-500 transition-colors">
                 <i class="fas fa-bell"></i>
@@ -103,11 +131,10 @@
         <span class="font-bold text-lg" id="float-total">$0</span>
     </div>
 
-    <!-- 購物車 Modal (V4.7 修改：取消固定底部，改為流動式) -->
+    <!-- 購物車 Modal -->
     <div id="cart-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity opacity-0" id="cart-backdrop" onclick="toggleCart()"></div>
         
-        <!-- max-h-[85vh] 稍微調小一點避免頂到上面 -->
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[85vh] flex flex-col" id="cart-panel">
             
             <div class="w-full flex justify-center pt-3 pb-1" onclick="toggleCart()">
@@ -123,7 +150,7 @@
                 <button onclick="clearCart()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-md hover:bg-red-100 transition-colors">清空</button>
             </div>
 
-            <!-- ★★★ 統一捲動區域：所有內容都在這裡面 ★★★ -->
+            <!-- ★★★ 統一捲動區域 ★★★ -->
             <div class="flex-1 overflow-y-auto p-6 pb-safe" id="cart-scroll-area">
                 
                 <!-- 1. 營業狀態提示 -->
@@ -159,7 +186,7 @@
                     </div>
                 </div>
                 
-                <!-- 4. 總計與按鈕 (直接放在滑動區底部) -->
+                <!-- 4. 總計與按鈕 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-gray-500 font-medium">總計金額</span>
@@ -170,7 +197,6 @@
                     </button>
                 </div>
 
-                <!-- 底部超大留白，防止被手機下方橫條擋住 -->
                 <div class="h-24"></div>
             </div>
         </div>
@@ -290,7 +316,7 @@
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
             if (marquees && Array.isArray(marquees) && marquees.length > 0) {
-                const content = marquees.map(m => m.content).join("   &nbsp;&nbsp;|&nbsp;&nbsp;   ");
+                const content = marquees.map(m => m.content).join("    &nbsp;&nbsp;|&nbsp;&nbsp;    ");
                 marqueeText.innerHTML = content;
                 marqueeSection.classList.remove('hidden');
             } else { marqueeSection.classList.add('hidden'); }
