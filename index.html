@@ -85,7 +85,7 @@
                 <p class="text-gray-400 text-sm mb-6">輸入手機號碼查看製作進度</p>
                 <div class="relative mb-4">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-phone text-gray-300"></i></div>
-                    <input type="tel" id="search-phone" class="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all outline-none font-medium text-lg" placeholder="09xx-xxx-xxx">
+                    <input type="tel" id="search-phone" class="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all outline-none font-medium text-lg" placeholder="09xx-xxx-xxx" maxlength="10">
                 </div>
                 <button onclick="searchOrder()" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-200 btn-press transition-all">立即查詢</button>
             </div>
@@ -136,7 +136,8 @@
                 
                 <div class="space-y-3 mb-4">
                     <input type="text" id="customer-name" placeholder="怎麼稱呼您？" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
-                    <input type="tel" id="customer-phone" placeholder="聯絡電話" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
+                    <!-- ★★★ 新增 maxlength="10" ★★★ -->
+                    <input type="tel" id="customer-phone" placeholder="聯絡電話 (09xxxxxxxx)" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" maxlength="10">
                     <input type="text" id="order-note" placeholder="備註 (例如：微辣、切塊)" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                 </div>
 
@@ -236,8 +237,9 @@
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
 
+            // 檢查是否有跑馬燈資料
             if (marquees && Array.isArray(marquees) && marquees.length > 0) {
-                // 用 " | " 串接多條跑馬燈
+                // 把所有啟用中的跑馬燈串起來，中間用 | 分隔
                 const content = marquees.map(m => m.content).join("   &nbsp;&nbsp;|&nbsp;&nbsp;   ");
                 marqueeText.innerHTML = content;
                 marqueeSection.classList.remove('hidden');
@@ -395,34 +397,87 @@
             }
         }
 
+        // ★★★ 送出訂單邏輯修改：加入手機驗證 ★★★
         function submitOrder() {
             if (cart.length === 0) return showToast('購物車是空的', 'error');
             const name = document.getElementById('customer-name').value.trim();
             const phone = document.getElementById('customer-phone').value.trim();
             const note = document.getElementById('order-note').value.trim();
-            if (!name || !phone) return showToast('請填寫稱呼與電話', 'error');
+
+            if (!name) return showToast('請填寫稱呼', 'error');
+            if (!phone) return showToast('請填寫聯絡電話', 'error');
+
+            // ★ 驗證手機格式：09開頭，後面接8個數字，共10碼
+            const phoneRegex = /^09\d{8}$/;
+            if (!phoneRegex.test(phone)) {
+                return showToast('請輸入正確的手機號碼 (09xxxxxxxx)', 'error');
+            }
+
             if (isSubmitting) return;
             isSubmitting = true;
+
             const btn = document.getElementById('submit-btn');
-            const originalText = btn.innerHTML;
+            const originalBtnText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>處理中...';
             btn.classList.add('opacity-70', 'pointer-events-none');
-            const data = { customerName: name, phone: phone, note: note, totalAmount: cart.reduce((s, i) => s + (i.price * i.count), 0), items: cart.map(i => ({ name: i.name, count: i.count, price: i.price })) };
-            fetch(API_URL, { method: 'POST', body: JSON.stringify(data), headers: { "Content-Type": "text/plain;charset=utf-8" } })
-            .then(res => res.json()).then(json => {
+
+            const data = {
+                customerName: name,
+                phone: phone,
+                note: note,
+                totalAmount: cart.reduce((s, i) => s + (i.price * i.count), 0),
+                items: cart.map(i => ({ name: i.name, count: i.count, price: i.price }))
+            };
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            })
+            .then(res => res.json())
+            .then(json => {
                 if (json.status === 'success') {
                     showToast('訂單送出成功！', 'success');
-                    toggleCart(); cart = []; updateCartUI(); document.getElementById('order-note').value = '';
-                    document.getElementById('search-phone').value = phone; switchTab('search'); searchOrder();
-                } else { showToast('失敗：' + json.message, 'error'); }
-            }).catch(e => { showToast('已送出，請留意老闆通知', 'success'); toggleCart(); cart = []; updateCartUI(); })
-            .finally(() => { isSubmitting = false; btn.innerHTML = originalText; btn.classList.remove('opacity-70', 'pointer-events-none'); });
+                    toggleCart();
+                    cart = [];
+                    updateCartUI();
+                    document.getElementById('order-note').value = '';
+                    
+                    // 自動帶入電話並查詢
+                    document.getElementById('search-phone').value = phone;
+                    switchTab('search');
+                    searchOrder();
+                } else {
+                    showToast('失敗：' + json.message, 'error');
+                }
+            })
+            .catch(e => {
+                showToast('已送出，請留意老闆通知', 'success');
+                toggleCart();
+                cart = [];
+                updateCartUI();
+            })
+            .finally(() => {
+                isSubmitting = false;
+                btn.innerHTML = originalBtnText;
+                btn.classList.remove('opacity-70', 'pointer-events-none');
+            });
         }
+
+        // ★★★ 查詢訂單邏輯修改：也加入手機驗證 ★★★
         function searchOrder() {
             const phone = document.getElementById('search-phone').value.trim();
             if (!phone) return showToast('請輸入電話', 'error');
+            
+            // 驗證查詢的手機號碼
+            const phoneRegex = /^09\d{8}$/;
+            if (!phoneRegex.test(phone)) {
+                return showToast('請輸入正確的手機號碼 (09xxxxxxxx)', 'error');
+            }
+
             const container = document.getElementById('search-result');
             container.innerHTML = `<div class="space-y-3"><div class="h-24 bg-gray-100 rounded-xl skeleton"></div><div class="h-24 bg-gray-100 rounded-xl skeleton"></div></div>`;
+            
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'search', phone: phone }), headers: { "Content-Type": "text/plain;charset=utf-8" } })
             .then(res => res.json()).then(json => {
                 container.innerHTML = '';
