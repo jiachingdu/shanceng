@@ -16,20 +16,21 @@
         .btn-press:active { transform: scale(0.95); }
         .transition-all-300 { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* 跑馬燈動畫 */
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         .animate-marquee { display: inline-block; white-space: nowrap; animation: marquee 20s linear infinite; }
         .animate-marquee:hover { animation-play-state: paused; }
-
-        /* 鎖定背景捲動 */
         .body-lock { overflow: hidden; height: 100vh; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 pb-32">
 
-    <!-- ★★★ 請確認這裡是 GAS 最新網址 ★★★ -->
+    <!-- ★★★ 設定區 ★★★ -->
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyeUwNCmlOw-fDt-g8fKWj9N9ue9XDZPGOY0tyntNvAXm6rp33oyqmTssA4JbJxcxg5/exec";
+        
+        // 預設營業時間 (若後端未設定則使用此值)
+        let OPEN_HOUR = 10;  
+        let CLOSE_HOUR = 13; 
     </script>
 
     <!-- 頂部 Header -->
@@ -48,31 +49,24 @@
         </div>
     </header>
 
-    <!-- 分類導航 (Sticky) -->
+    <!-- 分類導航 -->
     <div id="category-nav" class="sticky top-14 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100 py-3 hidden transition-all-300">
         <div class="max-w-md mx-auto flex overflow-x-auto no-scrollbar px-4 space-x-3" id="category-list"></div>
     </div>
 
-    <!-- 主要內容區 -->
     <main class="max-w-md mx-auto px-4 pt-4 min-h-screen">
-        
         <div id="page-menu" class="animate-fade-in">
-            
             <!-- 跑馬燈區塊 -->
             <div id="marquee-section" class="bg-orange-50 border border-orange-100 rounded-xl overflow-hidden relative h-10 flex items-center mb-4 hidden shadow-sm">
                 <div class="w-full flex items-center px-3">
                     <i class="fas fa-bullhorn text-orange-500 text-sm mr-2 z-10"></i>
                     <div class="flex-1 overflow-hidden relative h-full flex items-center">
-                        <div id="marquee-text" class="animate-marquee text-sm text-orange-800 font-medium w-full pl-2">
-                            讀取中...
-                        </div>
+                        <div id="marquee-text" class="animate-marquee text-sm text-orange-800 font-medium w-full pl-2">讀取中...</div>
                     </div>
                 </div>
             </div>
-
             <div id="loading-skeleton" class="space-y-4 mt-2">
                 <div class="h-32 bg-gray-200 rounded-xl skeleton"></div>
-                <div class="h-24 bg-gray-200 rounded-xl skeleton"></div>
                 <div class="h-24 bg-gray-200 rounded-xl skeleton"></div>
             </div>
             <div id="menu-container" class="space-y-6 hidden pb-20"></div>
@@ -93,13 +87,11 @@
         </div>
     </main>
 
-    <!-- 底部導航列 -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 pb-safe pt-2 px-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 flex justify-around h-16 items-start max-w-md mx-auto">
         <button onclick="switchTab('menu')" id="tab-menu" class="flex flex-col items-center space-y-1 w-16 text-orange-500 transition-colors duration-300"><i class="fas fa-utensils text-xl mb-0.5"></i><span class="text-[10px] font-medium">點餐</span></button>
         <button onclick="switchTab('search')" id="tab-search" class="flex flex-col items-center space-y-1 w-16 text-gray-400 hover:text-gray-600 transition-colors duration-300"><i class="fas fa-receipt text-xl mb-0.5"></i><span class="text-[10px] font-medium">訂單</span></button>
     </nav>
 
-    <!-- 浮動購物車條 -->
     <div id="floating-cart" onclick="toggleCart()" class="fixed bottom-20 left-4 right-4 max-w-[calc(100%-2rem)] md:max-w-[26rem] md:left-1/2 md:-translate-x-1/2 bg-gray-900 text-white rounded-full p-4 shadow-2xl z-30 flex justify-between items-center transform translate-y-[150%] transition-transform duration-500 cursor-pointer btn-press">
         <div class="flex items-center"><div class="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mr-3" id="float-count">0</div><span class="font-medium text-sm">查看購物車</span></div>
         <span class="font-bold text-lg" id="float-total">$0</span>
@@ -110,24 +102,23 @@
         <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity opacity-0" id="cart-backdrop" onclick="toggleCart()"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-w-md mx-auto max-h-[90vh] flex flex-col" id="cart-panel">
             
-            <!-- 把手 -->
             <div class="w-full flex justify-center pt-3 pb-1" onclick="toggleCart()">
                 <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
             </div>
 
-            <!-- 標題列 (含返回箭頭) -->
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center relative">
-                <button onclick="toggleCart()" class="text-gray-300 hover:text-gray-500 p-2 -ml-2 transition-colors">
-                    <i class="fas fa-chevron-left text-lg"></i>
-                </button>
+                <button onclick="toggleCart()" class="text-gray-300 hover:text-gray-500 p-2 -ml-2 transition-colors"><i class="fas fa-chevron-left text-lg"></i></button>
                 <h2 class="text-xl font-bold text-gray-800 absolute left-1/2 transform -translate-x-1/2">您的餐點</h2>
                 <button onclick="clearCart()" class="text-xs text-red-500 font-medium px-2 py-1 bg-red-50 rounded-md hover:bg-red-100 transition-colors">清空</button>
             </div>
 
-            <!-- 列表區 -->
+            <!-- 營業狀態提示 (動態顯示) -->
+            <div id="shop-closed-banner" class="hidden bg-gray-800 text-white px-4 py-2 text-xs text-center font-bold tracking-wide">
+                <i class="fas fa-moon mr-1 text-yellow-400"></i> 目前休息中，此訂單為預約單
+            </div>
+
             <div class="flex-1 overflow-y-auto p-6 space-y-4 min-h-[200px]" id="cart-items"></div>
 
-            <!-- 結帳區 -->
             <div class="p-6 bg-gray-50 border-t border-gray-100 pb-safe">
                 <div class="flex justify-between items-center mb-6">
                     <span class="text-gray-500 font-medium">總計金額</span>
@@ -135,8 +126,13 @@
                 </div>
                 
                 <div class="space-y-3 mb-4">
+                    <!-- ★★★ 新增：取餐時間欄位 (預設隱藏，休息時顯示) ★★★ -->
+                    <div id="pickup-time-container" class="hidden">
+                        <label class="block text-xs text-gray-500 mb-1 font-bold">預計取餐時間 <span class="text-red-500">*</span></label>
+                        <input type="datetime-local" id="pickup-time" class="w-full px-4 py-3 rounded-xl border-2 border-orange-200 bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all font-bold text-gray-700">
+                    </div>
+
                     <input type="text" id="customer-name" placeholder="怎麼稱呼您？" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
-                    <!-- ★★★ 新增 maxlength="10" ★★★ -->
                     <input type="tel" id="customer-phone" placeholder="聯絡電話 (09xxxxxxxx)" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" maxlength="10">
                     <input type="text" id="order-note" placeholder="備註 (例如：微辣、切塊)" class="w-full px-4 py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all">
                 </div>
@@ -148,16 +144,11 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-xs space-y-2 pointer-events-none"></div>
-
-    <!-- 公告 Modal -->
     <div id="announcement-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAnnouncement()"></div>
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full relative z-10 shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="announcement-box">
-            <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mb-4 text-xl">
-                <i class="fas fa-bullhorn"></i>
-            </div>
+            <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mb-4 text-xl"><i class="fas fa-bullhorn"></i></div>
             <h3 class="text-lg font-bold mb-2 text-gray-800">店家公告</h3>
             <p id="announcement-content" class="text-gray-600 leading-relaxed mb-6"></p>
             <button onclick="closeAnnouncement()" class="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">知道了</button>
@@ -169,8 +160,53 @@
         let cart = [];
         let isSubmitting = false;
         let activeCategory = '';
+        let isShopOpen = true; // 預設開啟
 
-        window.onload = async function() { await fetchMenu(); };
+        window.onload = async function() {
+            await fetchMenu();    // 2. 抓取菜單 (會一併讀取營業時間設定)
+        };
+
+        // 檢查營業時間函式
+        function checkBusinessHours(settings) {
+            // 從後端設定讀取營業時間 (如果有的話)
+            const openSetting = settings.find(s => s.key === 'open_hour');
+            const closeSetting = settings.find(s => s.key === 'close_hour');
+            
+            if (openSetting) OPEN_HOUR = parseInt(openSetting.value);
+            if (closeSetting) CLOSE_HOUR = parseInt(closeSetting.value);
+
+            const now = new Date();
+            const hour = now.getHours();
+            
+            // 判斷是否在營業時間內
+            if (hour >= OPEN_HOUR && hour < CLOSE_HOUR) {
+                isShopOpen = true;
+            } else {
+                isShopOpen = false;
+            }
+            updateShopStatusUI();
+        }
+
+        function updateShopStatusUI() {
+            const banner = document.getElementById('shop-closed-banner');
+            const pickupContainer = document.getElementById('pickup-time-container');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (isShopOpen) {
+                banner.classList.add('hidden');
+                pickupContainer.classList.add('hidden');
+                submitBtn.innerHTML = "確認送出";
+                submitBtn.classList.remove('bg-orange-600');
+                submitBtn.classList.add('bg-gray-900');
+            } else {
+                // 休息狀態：顯示提示、顯示預約時間欄位
+                banner.classList.remove('hidden');
+                pickupContainer.classList.remove('hidden');
+                submitBtn.innerHTML = "送出預約單";
+                submitBtn.classList.remove('bg-gray-900');
+                submitBtn.classList.add('bg-orange-600'); // 預約單換個顏色提醒
+            }
+        }
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -211,19 +247,20 @@
 
         async function fetchMenu() {
             try {
-                // ★★★ 加上時間戳記，強制抓取最新資料 ★★★
                 const response = await fetch(`${API_URL}?t=${new Date().getTime()}`);
                 const json = await response.json();
                 if (json.status === 'success') {
                     menuData = json.data.menu;
                     renderCategoryNav(menuData);
                     renderMenu(menuData);
-                    setupAnnouncement(json.data.settings);
                     
-                    // ★★★ 修正重點：讀取新的 marquees 資料結構，增加防呆 ★★★
-                    if (json.data.marquees) {
-                        setupMarquee(json.data.marquees);
+                    // 讀取設定 (包含營業時間)
+                    if (json.data.settings) {
+                        setupAnnouncement(json.data.settings);
+                        checkBusinessHours(json.data.settings); // 更新營業時間判斷
                     }
+                    
+                    if (json.data.marquees) setupMarquee(json.data.marquees);
                     
                     document.getElementById('loading-skeleton').classList.add('hidden');
                     document.getElementById('menu-container').classList.remove('hidden');
@@ -232,20 +269,14 @@
             } catch (e) { console.error(e); showToast('無法連線，請檢查網路', 'error'); }
         }
 
-        // ★★★ 跑馬燈修正：處理陣列並串接 ★★★
         function setupMarquee(marquees) {
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
-
-            // 檢查是否有跑馬燈資料
             if (marquees && Array.isArray(marquees) && marquees.length > 0) {
-                // 把所有啟用中的跑馬燈串起來，中間用 | 分隔
                 const content = marquees.map(m => m.content).join("   &nbsp;&nbsp;|&nbsp;&nbsp;   ");
                 marqueeText.innerHTML = content;
                 marqueeSection.classList.remove('hidden');
-            } else {
-                marqueeSection.classList.add('hidden'); 
-            }
+            } else { marqueeSection.classList.add('hidden'); }
         }
 
         function renderCategoryNav(menu) {
@@ -336,7 +367,6 @@
         }
         function clearCart() { if(confirm('確定要清空購物車嗎？')) { cart = []; updateCartUI(); toggleCart(); } }
 
-        // ★★★ 關鍵修改：購物車 UI 增加圖片 ★★★
         function updateCartUI() {
             const totalCount = cart.reduce((sum, i) => sum + i.count, 0);
             const floatBar = document.getElementById('floating-cart');
@@ -352,7 +382,6 @@
                 cart.forEach(item => {
                     totalAmount += item.price * item.count;
                     
-                    // 圖片處理
                     const imgHtml = item.image 
                         ? `<img src="${item.image}" class="w-12 h-12 object-cover rounded-lg mr-3 border border-gray-100" onerror="this.style.display='none'">` 
                         : `<div class="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex items-center justify-center text-gray-300 text-xs border border-gray-200"><i class="fas fa-utensils"></i></div>`;
@@ -381,50 +410,62 @@
         }
 
         function toggleCart() {
+            // 每次打開購物車都檢查一次時間
+            checkBusinessHours(menuData && menuData.settings ? menuData.settings : []); // 防止 menuData 尚未載入
+
             if (cart.length === 0 && document.getElementById('cart-modal').classList.contains('hidden')) return;
             const modal = document.getElementById('cart-modal');
             const backdrop = document.getElementById('cart-backdrop');
             const panel = document.getElementById('cart-panel');
             
             if (modal.classList.contains('hidden')) {
-                document.body.classList.add('body-lock'); // 鎖住
+                document.body.classList.add('body-lock'); 
                 modal.classList.remove('hidden');
                 requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); });
             } else {
-                document.body.classList.remove('body-lock'); // 解鎖
+                document.body.classList.remove('body-lock'); 
                 backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full');
                 setTimeout(() => { modal.classList.add('hidden'); }, 300);
             }
         }
 
-        // ★★★ 送出訂單邏輯修改：加入手機驗證 ★★★
         function submitOrder() {
             if (cart.length === 0) return showToast('購物車是空的', 'error');
             const name = document.getElementById('customer-name').value.trim();
             const phone = document.getElementById('customer-phone').value.trim();
-            const note = document.getElementById('order-note').value.trim();
-
+            let note = document.getElementById('order-note').value.trim();
+            
+            // 驗證基本資料
             if (!name) return showToast('請填寫稱呼', 'error');
             if (!phone) return showToast('請填寫聯絡電話', 'error');
-
-            // ★ 驗證手機格式：09開頭，後面接8個數字，共10碼
             const phoneRegex = /^09\d{8}$/;
-            if (!phoneRegex.test(phone)) {
-                return showToast('請輸入正確的手機號碼 (09xxxxxxxx)', 'error');
+            if (!phoneRegex.test(phone)) return showToast('請輸入正確的手機號碼', 'error');
+
+            // ★★★ 預約單邏輯 ★★★
+            if (!isShopOpen) {
+                const pickupTime = document.getElementById('pickup-time').value;
+                if (!pickupTime) return showToast('休息中，請選擇預約取餐時間', 'error');
+                
+                // 格式化時間顯示
+                const d = new Date(pickupTime);
+                const formattedTime = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                
+                // 將預約時間加入備註最前方
+                note = `【預約: ${formattedTime}】 ${note}`;
             }
 
             if (isSubmitting) return;
             isSubmitting = true;
 
             const btn = document.getElementById('submit-btn');
-            const originalBtnText = btn.innerHTML;
+            const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>處理中...';
             btn.classList.add('opacity-70', 'pointer-events-none');
 
             const data = {
                 customerName: name,
                 phone: phone,
-                note: note,
+                note: note, // 這裡的 note 可能已經包含預約時間了
                 totalAmount: cart.reduce((s, i) => s + (i.price * i.count), 0),
                 items: cart.map(i => ({ name: i.name, count: i.count, price: i.price }))
             };
@@ -438,46 +479,19 @@
             .then(json => {
                 if (json.status === 'success') {
                     showToast('訂單送出成功！', 'success');
-                    toggleCart();
-                    cart = [];
-                    updateCartUI();
-                    document.getElementById('order-note').value = '';
-                    
-                    // 自動帶入電話並查詢
-                    document.getElementById('search-phone').value = phone;
-                    switchTab('search');
-                    searchOrder();
-                } else {
-                    showToast('失敗：' + json.message, 'error');
-                }
-            })
-            .catch(e => {
-                showToast('已送出，請留意老闆通知', 'success');
-                toggleCart();
-                cart = [];
-                updateCartUI();
-            })
-            .finally(() => {
-                isSubmitting = false;
-                btn.innerHTML = originalBtnText;
-                btn.classList.remove('opacity-70', 'pointer-events-none');
-            });
+                    toggleCart(); cart = []; updateCartUI(); document.getElementById('order-note').value = '';
+                    document.getElementById('search-phone').value = phone; switchTab('search'); searchOrder();
+                } else { showToast('失敗：' + json.message, 'error'); }
+            }).catch(e => { showToast('已送出，請留意老闆通知', 'success'); toggleCart(); cart = []; updateCartUI(); })
+            .finally(() => { isSubmitting = false; btn.innerHTML = originalText; btn.classList.remove('opacity-70', 'pointer-events-none'); });
         }
 
-        // ★★★ 查詢訂單邏輯修改：也加入手機驗證 ★★★
+        // 查詢訂單邏輯 (保持原樣)
         function searchOrder() {
             const phone = document.getElementById('search-phone').value.trim();
             if (!phone) return showToast('請輸入電話', 'error');
-            
-            // 驗證查詢的手機號碼
-            const phoneRegex = /^09\d{8}$/;
-            if (!phoneRegex.test(phone)) {
-                return showToast('請輸入正確的手機號碼 (09xxxxxxxx)', 'error');
-            }
-
             const container = document.getElementById('search-result');
             container.innerHTML = `<div class="space-y-3"><div class="h-24 bg-gray-100 rounded-xl skeleton"></div><div class="h-24 bg-gray-100 rounded-xl skeleton"></div></div>`;
-            
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'search', phone: phone }), headers: { "Content-Type": "text/plain;charset=utf-8" } })
             .then(res => res.json()).then(json => {
                 container.innerHTML = '';
@@ -487,26 +501,13 @@
                         const status = order.status;
                         const isFinished = status === 'done' || status === 'finished' || status === 'cancelled';
 
-                        if(status === 'pending') {
-                            statusBadge = '<span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center">訂單成立</span>';
-                            borderClass = 'border-l-4 border-red-400';
-                        } else if(status === 'confirmed') {
-                            statusBadge = '<span class="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center animate-pulse"><i class="fas fa-fire mr-1"></i>備餐中</span>';
-                            borderClass = 'border-l-4 border-orange-400';
-                        } else if(status === 'done') {
-                            statusBadge = '<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center"><i class="fas fa-check mr-1"></i>備餐完畢</span>';
-                            borderClass = 'border-l-4 border-blue-500';
-                        } else if(status === 'finished') {
-                            statusBadge = '<span class="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center"><i class="fas fa-check-double mr-1"></i>已完成</span>';
-                            borderClass = 'border-l-4 border-green-500';
-                        } else if(status === 'cancelled') {
-                            statusBadge = '<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full">已取消</span>';
-                            borderClass = 'border-l-4 border-gray-300';
-                        }
+                        if(status === 'pending') { statusBadge = '<span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center">訂單成立</span>'; borderClass = 'border-l-4 border-red-400'; }
+                        else if(status === 'confirmed') { statusBadge = '<span class="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center animate-pulse"><i class="fas fa-fire mr-1"></i>備餐中</span>'; borderClass = 'border-l-4 border-orange-400'; }
+                        else if(status === 'done') { statusBadge = '<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center"><i class="fas fa-check mr-1"></i>備餐完畢</span>'; borderClass = 'border-l-4 border-blue-500'; }
+                        else if(status === 'finished') { statusBadge = '<span class="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center"><i class="fas fa-check-double mr-1"></i>已完成</span>'; borderClass = 'border-l-4 border-green-500'; }
+                        else if(status === 'cancelled') { statusBadge = '<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full">已取消</span>'; borderClass = 'border-l-4 border-gray-300'; }
 
-                        if (status === 'pending') {
-                            cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`;
-                        }
+                        if (status === 'pending') { cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`; }
 
                         const date = new Date(order.time);
                         const hh = String(date.getHours()).padStart(2, '0');
@@ -516,17 +517,11 @@
                         container.innerHTML += `
                             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-50 ${borderClass} mb-3">
                                 <div class="flex justify-between items-start mb-3">
-                                    <div>
-                                        <span class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">${order.orderId.slice(-6)}</span>
-                                        <div class="text-sm font-bold text-gray-800 mt-0.5">${timeStr}</div>
-                                    </div>
+                                    <div><span class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">${order.orderId.slice(-6)}</span><div class="text-sm font-bold text-gray-800 mt-0.5">${timeStr}</div></div>
                                     ${statusBadge}
                                 </div>
                                 <div class="py-3 border-t border-dashed border-gray-200"><p class="text-gray-600 text-sm leading-relaxed">${order.items.replace(/, /g, '<br>')}</p></div>
-                                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-                                    <span class="text-xs text-gray-400">總金額</span>
-                                    <span class="text-lg font-bold text-gray-900">$${order.total}</span>
-                                </div>
+                                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100"><span class="text-xs text-gray-400">總金額</span><span class="text-lg font-bold text-gray-900">$${order.total}</span></div>
                                 ${cancelBtn}
                             </div>`;
                     });
@@ -536,30 +531,9 @@
 
         function cancelOrder(orderId, btn) {
             if(!confirm('確定要取消這筆訂單嗎？')) return;
-            
-            if(btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>取消中...';
-                btn.classList.add('text-gray-400', 'cursor-not-allowed');
-                btn.classList.remove('text-red-400', 'hover:text-red-600', 'underline');
-            }
-
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'cancel_order', orderId: orderId, role: 'customer' })
-            }).then(res => res.json()).then(json => {
-                if(json.status === 'success') {
-                    showToast('訂單已取消');
-                    searchOrder();
-                } else {
-                    showToast(json.message, 'error');
-                    if(btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '取消訂單';
-                        btn.classList.remove('text-gray-400', 'cursor-not-allowed');
-                        btn.classList.add('text-red-400', 'hover:text-red-600', 'underline');
-                    }
-                }
+            if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>取消中...'; btn.classList.add('text-gray-400', 'cursor-not-allowed'); btn.classList.remove('text-red-400', 'hover:text-red-600', 'underline'); }
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'cancel_order', orderId: orderId, role: 'customer' }) }).then(res => res.json()).then(json => {
+                if(json.status === 'success') { showToast('訂單已取消'); searchOrder(); } else { showToast(json.message, 'error'); if(btn) { btn.disabled = false; btn.innerHTML = '取消訂單'; btn.classList.remove('text-gray-400', 'cursor-not-allowed'); btn.classList.add('text-red-400', 'hover:text-red-600', 'underline'); } }
             });
         }
     </script>
