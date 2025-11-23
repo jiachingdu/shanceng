@@ -210,7 +210,7 @@
 
         async function fetchMenu() {
             try {
-                // ★★★ 加上時間戳記，強制抓取最新資料 ★★★
+                // 加上時間戳記，強制抓取最新資料
                 const response = await fetch(`${API_URL}?t=${new Date().getTime()}`);
                 const json = await response.json();
                 if (json.status === 'success') {
@@ -219,10 +219,8 @@
                     renderMenu(menuData);
                     setupAnnouncement(json.data.settings);
                     
-                    // ★★★ 這裡加了防呆，如果沒有跑馬燈資料也不會報錯 ★★★
-                    if (json.data.marquees) {
-                        setupMarquee(json.data.marquees);
-                    }
+                    // ★★★ 修正重點：讀取新的 marquees 資料結構 ★★★
+                    setupMarquee(json.data.marquees);
                     
                     document.getElementById('loading-skeleton').classList.add('hidden');
                     document.getElementById('menu-container').classList.remove('hidden');
@@ -231,6 +229,7 @@
             } catch (e) { console.error(e); showToast('無法連線，請檢查網路', 'error'); }
         }
 
+        // ★★★ 跑馬燈修正：處理陣列並串接 ★★★
         function setupMarquee(marquees) {
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
