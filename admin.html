@@ -220,41 +220,54 @@
             closeSelect.value = 23;
         }
 
-async function tryLogin() {
+        async function tryLogin() {
             const input = document.getElementById('password-input').value;
             if (!input) return showToast('請輸入密碼', 'error');
-            
             const btn = document.getElementById('login-btn');
             const originalText = btn.innerText;
             btn.innerText = '驗證中...';
             btn.disabled = true;
-            
             const todayStr = new Date().toISOString().split('T')[0];
-            
             try {
-                // ★★★ 修正點：直接使用 input 變數，不使用 fetchWithAuth ★★★
-                // 這裡直接把 input (使用者輸入的密碼) 帶入 URL
-                const res = await fetch(`${API_URL}?type=admin_orders&date=${todayStr}&history=false&password=${input}`);
+                const res = await fetchWithAuth(`${API_URL}?type=admin_orders&date=${todayStr}&history=false`);
                 const json = await res.json();
-
-                if (json.status === 'error') {
+                if (json.status === 'error' && json.message.includes('密碼')) {
                     showToast('密碼錯誤', 'error');
                     document.getElementById('password-input').value = '';
                 } else {
-                    // 驗證成功，這時候才把正確密碼存入全域變數與 LocalStorage
                     currentPassword = input;
                     localStorage.setItem('admin_password', input);
                     localStorage.setItem('admin_login_time', new Date().getTime());
-                    
                     document.getElementById('login-overlay').classList.add('hidden');
                     document.getElementById('main-app').classList.remove('hidden');
-                    
                     setDateFilter('today');
                     showToast('登入成功');
                 }
             } catch (e) {
-                showToast('連線失敗或系統錯誤', 'error');
-                console.error(e);
+                // 為了第一次登入能過，我們需要用POST方法帶密碼去試
+                 const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'search', 
+                        password: input,
+                        // 假動作驗證
+                        action: 'update_order_status', 
+                        orderId: 'CHECK_LOGIN_ONLY', 
+                        status: 'check'
+                    })
+                });
+                const json = await res.json();
+                if (json.message && json.message.includes('密碼')) {
+                     showToast('密碼錯誤', 'error');
+                } else {
+                    currentPassword = input;
+                    localStorage.setItem('admin_password', input);
+                    localStorage.setItem('admin_login_time', new Date().getTime());
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                    setDateFilter('today');
+                    showToast('登入成功');
+                }
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -361,5 +374,4 @@ async function tryLogin() {
         }
     </script>
 </body>
-
 </html>
