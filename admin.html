@@ -22,7 +22,7 @@
 
     <!-- ★★★ 設定區 ★★★ -->
     <script>
-        // 請確認這是最新的 GAS 網址
+        // ★★★ 請確認這是你最新的 GAS 網址 ★★★
         const API_URL = "https://script.google.com/macros/s/AKfycbwyWLYVgNDa9RPQp4DTMDpbHQYfm8KFjqhudwX0k4zJw6vqddPPtn9Ae1umAN78R-4N/exec";
         
         // GitHub Token 設定 (圖片上傳用)
@@ -279,8 +279,11 @@
 
             try {
                 // 發送專屬的 check_login 動作
+                // 修正：加入 headers 和 redirect 防止跨域被擋
                 const res = await fetch(API_URL, {
+                    redirect: "follow",
                     method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
                     body: JSON.stringify({ 
                         password: input,
                         action: 'check_login'
@@ -303,6 +306,7 @@
                     document.getElementById('password-input').value = '';
                 }
             } catch (e) {
+                console.error(e);
                 showToast('連線失敗，請檢查網路', 'error');
             } finally {
                 btn.innerText = originalText;
@@ -327,6 +331,9 @@
                 const body = JSON.parse(options.body);
                 body.password = currentPassword;
                 options.body = JSON.stringify(body);
+                // 修正：加入 headers 防止 CORS 問題
+                options.headers = { "Content-Type": "text/plain;charset=utf-8" };
+                options.redirect = "follow";
                 return fetch(url, options);
             }
             const separator = url.includes('?') ? '&' : '?';
@@ -335,12 +342,30 @@
         
         function getLocalYYMMDD(date) { const year = date.getFullYear(), month = String(date.getMonth() + 1).padStart(2, '0'), day = String(date.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
         function setDateFilter(type) { const dateInput = document.getElementById('date-filter'), now = new Date(); if (type === 'today') { dateInput.value = getLocalYYMMDD(now); } else if (type === 'yesterday') { const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1); dateInput.value = getLocalYYMMDD(yesterday); } fetchOrders(); }
-        function showToast(message, type = 'success') { const container = document.getElementById('toast-container'), toast = document.createElement('div'), icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-exclamation-circle text-red-500"></i>'; toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`; toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0'); setTimeout(() => { toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 500); }, 3000); }
+        
+        // 修正後的 showToast (原本少了一個括號)
+        function showToast(message, type = 'success') { 
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-exclamation-circle text-red-500"></i>'; 
+            toast.className = `bg-white text-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 flex items-center space-x-3 transform -translate-y-10 opacity-0 transition-all duration-500`; 
+            toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span>`; 
+            container.appendChild(toast); 
+            
+            // 修正處：補上 closing parenthesis
+            requestAnimationFrame(() => toast.classList.remove('-translate-y-10', 'opacity-0')); 
+            
+            setTimeout(() => { 
+                toast.classList.add('-translate-y-10', 'opacity-0'); 
+                setTimeout(() => toast.remove(), 500); 
+            }, 3000); 
+        }
+
         function switchTab(tab) {
-            ['page-orders', 'page-menu', 'page-settings', 'page-stats', 'page-marquee'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            ['page-orders', 'page-menu', 'page-settings', 'page-stats', 'page-marquee'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
             ['tab-orders', 'tab-menu', 'tab-settings', 'tab-stats', 'tab-marquee'].forEach(id => { 
-                document.getElementById(id).classList.remove('text-orange-500'); 
-                document.getElementById(id).classList.add('text-gray-400'); 
+                document.getElementById(id)?.classList.remove('text-orange-500'); 
+                document.getElementById(id)?.classList.add('text-gray-400'); 
             });
             document.getElementById(`page-${tab}`).classList.remove('hidden');
             document.getElementById(`tab-${tab}`).classList.add('text-orange-500');
@@ -353,14 +378,34 @@
             else if(tab === 'marquee') fetchMarquees();
         }
 
-        // --- 圖片上傳 ---
+        // --- 圖片上傳 (已優化預覽) ---
         function resetGithubToken() { localStorage.removeItem('github_token'); alert('GitHub 金鑰已重置，下次上傳時請重新輸入。'); }
         async function handleImageUpload(input) {
             const file = input.files[0]; if (!file) return;
             const maxSize = 2 * 1024 * 1024; if (file.size > maxSize) { showToast('圖片過大！', 'error'); input.value = ''; return; }
             let token = localStorage.getItem('github_token'); if (!token) { token = prompt("GitHub Token:"); if (!token) { alert("需輸入 Token"); input.value = ''; return; } localStorage.setItem('github_token', token); }
             const btn = document.getElementById('upload-btn'); const originalText = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
-            try { const reader = new FileReader(); reader.onload = async function(e) { const content = e.target.result.split(',')[1]; const filename = 'img_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''); const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images/${filename}`, { method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `Upload ${filename}`, content: content }) }); if (res.ok) { const url = `https://${GITHUB_USERNAME}.github.io/${REPO_NAME}/images/${filename}`; document.getElementById('edit-image').value = url; previewImage(url); showToast('上傳成功'); } else { const err = await res.json(); if (res.status === 401) { localStorage.removeItem('github_token'); alert("Token 無效"); } else throw new Error(err.message); } btn.innerHTML = originalText; btn.disabled = false; input.value = ''; }; reader.readAsDataURL(file); } catch (e) { showToast('上傳失敗', 'error'); btn.innerHTML = originalText; btn.disabled = false; }
+            try { 
+                const reader = new FileReader(); 
+                reader.onload = async function(e) { 
+                    const content = e.target.result.split(',')[1]; 
+                    const filename = 'img_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''); 
+                    const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/images/${filename}`, { method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `Upload ${filename}`, content: content }) }); 
+                    if (res.ok) { 
+                        const url = `https://${GITHUB_USERNAME}.github.io/${REPO_NAME}/images/${filename}`; 
+                        document.getElementById('edit-image').value = url; 
+                        // 這裡使用 base64 預覽，解決 GitHub Pages 延遲問題
+                        previewImage(e.target.result); 
+                        showToast('上傳成功 (圖片網址約1-3分鐘後生效)'); 
+                    } else { 
+                        const err = await res.json(); 
+                        if (res.status === 401) { localStorage.removeItem('github_token'); alert("Token 無效"); } 
+                        else throw new Error(err.message); 
+                    } 
+                    btn.innerHTML = originalText; btn.disabled = false; input.value = ''; 
+                }; 
+                reader.readAsDataURL(file); 
+            } catch (e) { showToast('上傳失敗', 'error'); btn.innerHTML = originalText; btn.disabled = false; }
         }
         function previewImage(url) { const img = document.getElementById('preview-img'), icon = document.getElementById('preview-icon'); if(url) { img.src = url; img.classList.remove('hidden'); icon.classList.add('hidden'); } else { img.classList.add('hidden'); icon.classList.remove('hidden'); } }
 
