@@ -210,6 +210,7 @@
 
         async function fetchMenu() {
             try {
+                // ★★★ 加上時間戳記，強制抓取最新資料 ★★★
                 const response = await fetch(`${API_URL}?t=${new Date().getTime()}`);
                 const json = await response.json();
                 if (json.status === 'success') {
@@ -217,7 +218,11 @@
                     renderCategoryNav(menuData);
                     renderMenu(menuData);
                     setupAnnouncement(json.data.settings);
-                    setupMarquee(json.data.marquees);
+                    
+                    // ★★★ 這裡加了防呆，如果沒有跑馬燈資料也不會報錯 ★★★
+                    if (json.data.marquees) {
+                        setupMarquee(json.data.marquees);
+                    }
                     
                     document.getElementById('loading-skeleton').classList.add('hidden');
                     document.getElementById('menu-container').classList.remove('hidden');
@@ -229,11 +234,16 @@
         function setupMarquee(marquees) {
             const marqueeSection = document.getElementById('marquee-section');
             const marqueeText = document.getElementById('marquee-text');
+
+            // 檢查是否有跑馬燈資料
             if (marquees && Array.isArray(marquees) && marquees.length > 0) {
+                // 把所有啟用中的跑馬燈串起來，中間用 | 分隔
                 const content = marquees.map(m => m.content).join("   &nbsp;&nbsp;|&nbsp;&nbsp;   ");
                 marqueeText.innerHTML = content;
                 marqueeSection.classList.remove('hidden');
-            } else { marqueeSection.classList.add('hidden'); }
+            } else {
+                marqueeSection.classList.add('hidden'); 
+            }
         }
 
         function renderCategoryNav(menu) {
@@ -324,6 +334,7 @@
         }
         function clearCart() { if(confirm('確定要清空購物車嗎？')) { cart = []; updateCartUI(); toggleCart(); } }
 
+        // ★★★ 關鍵修改：購物車 UI 增加圖片 ★★★
         function updateCartUI() {
             const totalCount = cart.reduce((sum, i) => sum + i.count, 0);
             const floatBar = document.getElementById('floating-cart');
@@ -339,6 +350,7 @@
                 cart.forEach(item => {
                     totalAmount += item.price * item.count;
                     
+                    // 圖片處理
                     const imgHtml = item.image 
                         ? `<img src="${item.image}" class="w-12 h-12 object-cover rounded-lg mr-3 border border-gray-100" onerror="this.style.display='none'">` 
                         : `<div class="w-12 h-12 bg-gray-100 rounded-lg mr-3 flex items-center justify-center text-gray-300 text-xs border border-gray-200"><i class="fas fa-utensils"></i></div>`;
@@ -373,11 +385,11 @@
             const panel = document.getElementById('cart-panel');
             
             if (modal.classList.contains('hidden')) {
-                document.body.classList.add('body-lock'); 
+                document.body.classList.add('body-lock'); // 鎖住
                 modal.classList.remove('hidden');
                 requestAnimationFrame(() => { backdrop.classList.remove('opacity-0'); panel.classList.remove('translate-y-full'); });
             } else {
-                document.body.classList.remove('body-lock'); 
+                document.body.classList.remove('body-lock'); // 解鎖
                 backdrop.classList.add('opacity-0'); panel.classList.add('translate-y-full');
                 setTimeout(() => { modal.classList.add('hidden'); }, 300);
             }
@@ -437,8 +449,7 @@
                             borderClass = 'border-l-4 border-gray-300';
                         }
 
-                        // ★★★ 修正邏輯：只有 pending (訂單成立) 才可以取消 ★★★
-                        if (status === 'pending') {
+                        if (status === 'pending' || status === 'confirmed') {
                             cancelBtn = `<button onclick="cancelOrder('${order.orderId}', this)" class="text-xs text-red-400 font-medium underline mt-2 block text-right w-full hover:text-red-600">取消訂單</button>`;
                         }
 
